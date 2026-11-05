@@ -1,8 +1,19 @@
 diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
-index 733d55a..2577fa9 100644
+index 733d55a..e0990d7 100644
 --- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
 +++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
-@@ -113,7 +113,10 @@ namespace WebRtcVoice
+@@ -63,6 +63,10 @@ namespace WebRtcVoice
+         // [WebRtcVoice] ConferenceApiUrl. Empty (the default): conferences and Wolf Chat rooms are off.
+         private string m_ConfUrl = string.Empty;
+         private string m_SimSecret = string.Empty;
++        private bool m_UseExistingVoiceKey;
++        // WolfVoiceKeyFile refreshes its value when the file rotates. Do not
++        // pin the fallback secret at startup while the PHP service has rotated.
++        private string ConferenceSecret => m_UseExistingVoiceKey ? CredKey : m_SimSecret;
+         private readonly Dictionary<UUID, Conference> m_Conferences = new Dictionary<UUID, Conference>();
+         private readonly Dictionary<UUID, DateTime> m_NotConferences = new Dictionary<UUID, DateTime>();
+         // [review] "you are not in it" (403), remembered a minute per session XOR agent, so typing in a session one is
+@@ -113,7 +117,10 @@ namespace WebRtcVoice
                  m_log.Info($"{logHeader}: no ConferenceApiUrl - conference chats and Wolf Chat voice rooms are off (group voice is not affected)");
                  return;
              }
@@ -14,16 +25,59 @@ index 733d55a..2577fa9 100644
              IConfig wolf = config.Configs["Wolf"];
              if (wolf != null)
                  secretPath = wolf.GetString("SimSecretPath", secretPath);
-@@ -126,6 +129,8 @@ namespace WebRtcVoice
+@@ -126,7 +133,8 @@ namespace WebRtcVoice
              {
                  m_log.WarnFormat("{0}: could not read {1}: {2}", logHeader, secretPath, e.Message);
              }
-+            if (m_SimSecret.Length == 0 && string.IsNullOrEmpty(secretPath))
-+                m_SimSecret = CredKey;
-             if (m_SimSecret.Length == 0)
+-            if (m_SimSecret.Length == 0)
++            m_UseExistingVoiceKey = string.IsNullOrEmpty(secretPath);
++            if (ConferenceSecret.Length == 0)
                  m_log.Warn($"{logHeader}: no sim secret - conference chats and Wolf Chat voice rooms are off");
          }
-@@ -852,11 +857,13 @@ namespace WebRtcVoice
+ 
+@@ -135,7 +143,7 @@ namespace WebRtcVoice
+             // [review] A fresh login has no conference windows open, and the viewer drops conference text for a session
+             // it does not have (llimprocessing.cpp:1865-1872). So at login every conference this avatar had joined goes
+             // back to 'invited': the next line in it arrives as an invitation, which opens the window again.
+-            if ((sp.TeleportFlags & Constants.TeleportFlags.ViaLogin) != 0 && m_SimSecret.Length > 0)
++            if ((sp.TeleportFlags & Constants.TeleportFlags.ViaLogin) != 0 && ConferenceSecret.Length > 0)
+             {
+                 Scene scene = sp.Scene;
+                 UUID who = sp.UUID;
+@@ -184,7 +192,7 @@ namespace WebRtcVoice
+             error = null;
+             status = 0;
+             answered = false;
+-            if (m_SimSecret.Length == 0 || m_ConfUrl.Length == 0)
++            if (ConferenceSecret.Length == 0 || m_ConfUrl.Length == 0)
+             {
+                 error = "conferences are not configured on this region";
+                 return null;
+@@ -197,7 +205,7 @@ namespace WebRtcVoice
+             string json = JsonSerializer.Serialize(body);
+             long when = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+             string who = agent.ToString();
+-            string sig = HexHmac(m_SimSecret, region + "\n" + who + "\n" + when.ToString(CultureInfo.InvariantCulture) + "\n" + json);
++            string sig = HexHmac(ConferenceSecret, region + "\n" + who + "\n" + when.ToString(CultureInfo.InvariantCulture) + "\n" + json);
+             try
+             {
+                 using (HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, m_ConfUrl))
+@@ -708,7 +716,7 @@ namespace WebRtcVoice
+         private void OnClientConferenceMessage(IClientAPI client, GridInstantMessage im)
+         {
+             if (im.dialog != IM_SESSION_SEND && im.dialog != IM_SESSION_LEAVE) return;
+-            if (m_SimSecret.Length == 0 || im.fromGroup) return;
++            if (ConferenceSecret.Length == 0 || im.fromGroup) return;
+             UUID session = new UUID(im.imSessionID);
+             UUID from = client.AgentId;
+             if (session.IsZero()) return;
+@@ -847,23 +855,25 @@ namespace WebRtcVoice
+             IMessageTransferModule tm = scene.RequestModuleInterface<IMessageTransferModule>();
+             if (tm is null) return;
+             string json = OSDParser.SerializeJsonString(payload);
+-            string sig = HexHmac(m_SimSecret, "wolfconf1:" + to.ToString() + ":" + json);
++            string sig = HexHmac(ConferenceSecret, "wolfconf1:" + to.ToString() + ":" + json);
+             UUID from = payload.ContainsKey("from") ? payload["from"].AsUUID() : UUID.Zero;
              GridInstantMessage gim = new GridInstantMessage(scene, from, payload.ContainsKey("from_name") ? payload["from_name"].AsString() : string.Empty,
                      to, WOLF_CALL_DIALOG, false, string.Empty, payload["session"].AsUUID(), false, Vector3.Zero,
                      Util.UTF8.GetBytes(WOLF_CONF_MARK + sig + "\n" + json), true);
@@ -38,3 +92,20 @@ index 733d55a..2577fa9 100644
          }
  
          /// <summary>A conference envelope from another region (DeliverConf). Fires only where the recipient
+         /// is a root agent (MessageTransferModule.cs:407-415).</summary>
+         private void OnIncomingConference(GridInstantMessage msg)
+         {
+-            if (msg.dialog != WOLF_CALL_DIALOG || msg.binaryBucket is null || m_SimSecret.Length == 0) return;
++            if (msg.dialog != WOLF_CALL_DIALOG || msg.binaryBucket is null || ConferenceSecret.Length == 0) return;
+             string text = Util.UTF8.GetString(msg.binaryBucket);
+             if (!text.StartsWith(WOLF_CONF_MARK, StringComparison.Ordinal)) return;
+             try
+@@ -874,7 +884,7 @@ namespace WebRtcVoice
+                 string sig = rest.Substring(0, nl);
+                 string json = rest.Substring(nl + 1);
+                 UUID to = new UUID(msg.toAgentID);
+-                string want = HexHmac(m_SimSecret, "wolfconf1:" + to.ToString() + ":" + json);
++                string want = HexHmac(ConferenceSecret, "wolfconf1:" + to.ToString() + ":" + json);
+                 if (!CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(sig), Encoding.ASCII.GetBytes(want)))
+                 {
+                     m_log.DebugFormat("{0}[CONF]: dropped a conference message for {1} with a bad signature", logHeader, to);
