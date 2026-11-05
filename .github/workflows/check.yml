@@ -70,3 +70,14 @@ jobs:
       - name: Compile OpenSimulator (Release)
         working-directory: opensim
         run: dotnet build --configuration Release OpenSim.sln
+      - name: Verify patched module output
+        run: test -s opensim/bin/WebRtcVoiceRegionModule.dll
+      - name: Upload patched module for test
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1
+          path: |
+            opensim/bin/WebRtcVoiceRegionModule.dll
+            opensim/bin/WebRtcVoiceRegionModule.pdb
+          if-no-files-found: error
+          retention-days: 7
