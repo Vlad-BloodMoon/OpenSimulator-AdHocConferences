@@ -18,6 +18,8 @@
 - `database/schema.sql`: initial MySQL tables for sessions and members.
 - `web/conferences.php`: **experimental** PHP state API (start/invite/accept/leave/members).
 - `web/config.php.example`: template for a **private test installation**.
+- `patches/wolfconference-root-routing.patch`: one-line root-only routing change for WolfConference's signed internal envelopes.
+- `docs/TRANSPORT_ANALYSIS.md`: code findings, limits, and test checklist.
 
 ## Security and deployment status
 
