@@ -29,7 +29,11 @@ A second prototype now follows WolfConference's actual request/response format:
 - `web/wolf_api.php` and `web/wolf_config.php.example` — HMAC-authenticated PHP registry.
 - `patches/wolfconference-voice-key-and-root.patch` — allows WolfConference to reuse an **already configured** `[WebRtcVoice] CredKeyFile` when no `[Wolf] SimSecretPath` is set, and routes internal dialog-2 messages to root agents.
 
-**Do not deploy as-is.** It has not been executed or compiled. The PHP host must possess the same existing credential key, and only authorized simulator IPs should access the endpoint. Reusing one key for both voice and conference HMAC deliberately couples their trust boundaries, so its risk needs acceptance before a production deployment. The original independent `web/conferences.php` is retained only as historical groundwork; it is **incompatible** with WolfConference.
+**Do not deploy as-is.** PHP syntax checks run in GitHub Actions, but there is no live MySQL integration test or C# build yet. The PHP host must possess the same existing credential key, and only authorized simulator IPs should access the endpoint. Reusing one key for both voice and conference HMAC deliberately couples their trust boundaries, so its risk needs acceptance before a production deployment. The original independent `web/conferences.php` is retained only as historical groundwork; it is **incompatible** with WolfConference.
+
+## Automated checks
+
+GitHub Actions checks PHP syntax and runs `node tests/hmac-vectors.mjs` on each push. These checks do **not** establish end-to-end conference functionality.
 
 ## Security and deployment status
 
