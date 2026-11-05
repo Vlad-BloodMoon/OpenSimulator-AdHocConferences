@@ -33,13 +33,13 @@ A second prototype now follows WolfConference's actual request/response format:
 
 ## Automated checks
 
-GitHub Actions checks PHP syntax, HMAC vectors, and a **PHP + MySQL integration test** of conference creation, invitation, acceptance, duplicate invitation, voice activation, leave, relogin, and rejection of a tampered signature. These checks pass on the test database, but do **not** establish Firestorm/OpenSimulator end-to-end conference functionality.
+GitHub Actions checks PHP syntax, HMAC vectors, a **.NET 8 OpenSimulator Release build**, and a **PHP + MySQL integration test** of conference creation, invitation, acceptance, duplicate invitation, voice activation, leave, relogin, and rejection of a tampered signature. These checks pass on the test database, but do **not** establish Firestorm/OpenSimulator end-to-end conference functionality.
 
 ## Security and deployment status
 
 **Do not publish the PHP endpoint on the open Internet.** Its initial access control relies on a trusted source-IP allowlist. That limits which hosts may reach it, but does **not** prove which avatar initiated each action. Therefore it is only groundwork for a restricted, trusted-network test—not a safe public service for independently operated simulators.
 
-A verified simulator/actor trust boundary, compatibility checks against the patched WolfConference module, and full cross-process integration tests are required before release. The existing Display Names project is a reference for packaging (`.addin.xml`, separate DLL, OpenSim.ini configuration, PHP + MySQL backend), not proof that IM conferences work the same way.
+The patched WolfConference code now passes a .NET 8 Release build against the current `Vlad-BloodMoon/opensim` `master`, and GitHub Actions publishes a **test-only** `WebRtcVoiceRegionModule.dll` artifact (7-day retention). Real Firestorm/region communication and a production-grade simulator/actor trust boundary are **not** validated yet. The existing Display Names project is a reference for packaging (`.addin.xml`, separate DLL, OpenSim.ini configuration, PHP + MySQL backend), not proof that IM conferences work the same way.
 
 ## Français
 
