@@ -46,3 +46,27 @@ jobs:
             sleep 0.2
           done
           node tests/integration.mjs
+
+  opensim-csharp-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out conference patches
+        uses: actions/checkout@v4
+      - name: Check out OpenSimulator source
+        uses: actions/checkout@v4
+        with:
+          repository: Vlad-BloodMoon/opensim
+          ref: master
+          path: opensim
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Apply WolfConference patch
+        run: git -C opensim apply ../patches/wolfconference-voice-key-and-root.patch
+      - name: Generate OpenSimulator projects
+        working-directory: opensim
+        run: ./runprebuild.sh
+      - name: Compile OpenSimulator (Release)
+        working-directory: opensim
+        run: dotnet build --configuration Release OpenSim.sln
