@@ -5,15 +5,44 @@ on:
   pull_request:
 
 jobs:
-  syntax-and-hmac:
+  syntax-and-integration:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: TEST_ROOT_PASSWORD_ONLY
+          MYSQL_DATABASE: opensim_adhoc
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pTEST_ROOT_PASSWORD_ONLY"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Install PHP MySQL driver and client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-mysql mysql-client
       - name: PHP syntax
         run: |
           php -l web/conferences.php
           php -l web/config.php.example
           php -l web/wolf_api.php
           php -l web/wolf_config.php.example
+          php -l tests/wolf_config.test.php
       - name: HMAC protocol vectors
         run: node tests/hmac-vectors.mjs
+      - name: PHP + MySQL conference lifecycle
+        run: |
+          MYSQL_PWD=TEST_ROOT_PASSWORD_ONLY mysql -h 127.0.0.1 -uroot opensim_adhoc < database/wolf_schema.sql
+          cp tests/wolf_config.test.php web/wolf_config.php
+          php -S 127.0.0.1:8787 -t web >/tmp/wolf-api-test.log 2>&1 &
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/wolf_api.php || true)
+            if [ "$code" = "405" ]; then break; fi
+            sleep 0.2
+          done
+          node tests/integration.mjs
