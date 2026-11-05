@@ -1,0 +1,40 @@
+diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+index 733d55a..2577fa9 100644
+--- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
++++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+@@ -113,7 +113,10 @@ namespace WebRtcVoice
+                 m_log.Info($"{logHeader}: no ConferenceApiUrl - conference chats and Wolf Chat voice rooms are off (group voice is not affected)");
+                 return;
+             }
+-            string secretPath = "/etc/opensim/sim_secret";
++            // Default to the voice credential secret already configured for
++            // this simulator: no additional per-sim secret file is required.
++            // An explicit [Wolf] SimSecretPath still takes precedence.
++            string secretPath = string.Empty;
+             IConfig wolf = config.Configs["Wolf"];
+             if (wolf != null)
+                 secretPath = wolf.GetString("SimSecretPath", secretPath);
+@@ -126,6 +129,8 @@ namespace WebRtcVoice
+             {
+                 m_log.WarnFormat("{0}: could not read {1}: {2}", logHeader, secretPath, e.Message);
+             }
++            if (m_SimSecret.Length == 0 && string.IsNullOrEmpty(secretPath))
++                m_SimSecret = CredKey;
+             if (m_SimSecret.Length == 0)
+                 m_log.Warn($"{logHeader}: no sim secret - conference chats and Wolf Chat voice rooms are off");
+         }
+@@ -852,11 +857,13 @@ namespace WebRtcVoice
+             GridInstantMessage gim = new GridInstantMessage(scene, from, payload.ContainsKey("from_name") ? payload["from_name"].AsString() : string.Empty,
+                     to, WOLF_CALL_DIALOG, false, string.Empty, payload["session"].AsUUID(), false, Vector3.Zero,
+                     Util.UTF8.GetBytes(WOLF_CONF_MARK + sig + "\n" + json), true);
++            // Dialog 2 is an internal envelope, never a viewer IM. A child
++            // agent must not consume it: route to the recipient's root region.
+             tm.SendInstantMessage(gim, delegate (bool success)
+             {
+                 if (!success)
+                     m_log.DebugFormat("{0}[CONF]: {1} could not be reached for {2}", logHeader, to, payload["k"].AsString());
+-            });
++            }, true);
+         }
+ 
+         /// <summary>A conference envelope from another region (DeliverConf). Fires only where the recipient
