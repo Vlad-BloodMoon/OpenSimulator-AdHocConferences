@@ -1,0 +1,19 @@
+name: Prototype checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  syntax-and-hmac:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP syntax
+        run: |
+          php -l web/conferences.php
+          php -l web/config.php.example
+          php -l web/wolf_api.php
+          php -l web/wolf_config.php.example
+      - name: HMAC protocol vectors
+        run: node tests/hmac-vectors.mjs
