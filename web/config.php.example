@@ -1,0 +1,12 @@
+<?php
+declare(strict_types=1);
+
+// Private BloodMoon test deployment only. Place real config outside the web root.
+return [
+    'dsn' => 'mysql:host=127.0.0.1;dbname=opensim_adhoc;charset=utf8mb4',
+    'user' => 'adhoc_user',
+    'password' => 'CHANGE_ME', // MySQL account password; not a new module signing key.
+    'allowed_ips' => ['127.0.0.1'], // Explicit simulator egress addresses.
+    'ttl_seconds' => 21600,
+    'max_members' => 40,
+];
