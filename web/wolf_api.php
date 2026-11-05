@@ -45,9 +45,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 
 try {
     $cfg = require __DIR__ . '/wolf_config.php';
-    if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', $cfg['allowed_ips'], true)) {
-        reply(403, false, 'host not allowed');
-    }
     $raw = file_get_contents('php://input', false, null, 0, 16384);
     if (!is_string($raw) || strlen($raw) === 0 || strlen($raw) >= 16384) {
         reply(400, false, 'invalid body');
@@ -96,6 +93,26 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
+    // The same authorization source used by WolfVoice's administration:
+    // automatically and manually registered hosts must both be status=allowed.
+    // The local list is only for on-server diagnostics; it is not a second
+    // remote-server allowlist. Never trust X-Forwarded-For here.
+    $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!filter_var($clientIp, FILTER_VALIDATE_IP)) {
+        reply(403, false, 'host not allowed');
+    }
+    if (!in_array($clientIp, $cfg['allowed_ips'] ?? [], true)) {
+        $host = $db->prepare(
+            "SELECT 1 FROM wolfvoice_admin.servers
+             WHERE status = 'allowed'
+               AND (resolved_ip = ? OR server_address = ?)
+             LIMIT 1"
+        );
+        $host->execute([$clientIp, $clientIp]);
+        if (!$host->fetchColumn()) {
+            reply(403, false, 'host not allowed');
+        }
+    }
     $db->beginTransaction();
     // Bounded cleanup: expired sessions cascade-delete their memberships.
     $db->exec('DELETE FROM wolf_conf_sessions WHERE expires_at <= UTC_TIMESTAMP() LIMIT 100');
