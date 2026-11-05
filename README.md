@@ -33,7 +33,7 @@ A second prototype now follows WolfConference's actual request/response format:
 
 ## Automated checks
 
-GitHub Actions checks PHP syntax and runs `node tests/hmac-vectors.mjs` on each push. These checks do **not** establish end-to-end conference functionality.
+GitHub Actions checks PHP syntax, HMAC vectors, and a **PHP + MySQL integration test** of conference creation, invitation, acceptance, duplicate invitation, voice activation, leave, relogin, and rejection of a tampered signature. These checks pass on the test database, but do **not** establish Firestorm/OpenSimulator end-to-end conference functionality.
 
 ## Security and deployment status
 
