@@ -97,6 +97,8 @@ try {
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
     $db->beginTransaction();
+    // Bounded cleanup: expired sessions cascade-delete their memberships.
+    $db->exec('DELETE FROM wolf_conf_sessions WHERE expires_at <= UTC_TIMESTAMP() LIMIT 100');
 
     if ($action === 'relogin') {
         $q = $db->prepare("UPDATE wolf_conf_members SET state = 'invited' WHERE agent_id = ?");
@@ -142,12 +144,16 @@ try {
             $count = $db->prepare('SELECT COUNT(*) FROM wolf_conf_members WHERE session_id = ?');
             $count->execute([$session]);
             $existing = (int)$count->fetchColumn();
-            if ($existing + count($invitees) > (int)$cfg['max_members']) {
+            $existingIds = $db->prepare('SELECT agent_id FROM wolf_conf_members WHERE session_id = ?');
+            $existingIds->execute([$session]);
+            $known = array_fill_keys($existingIds->fetchAll(PDO::FETCH_COLUMN), true);
+            $newInvitees = array_diff_key($invitees, $known);
+            if ($existing + count($newInvitees) > (int)$cfg['max_members']) {
                 $db->rollBack();
                 reply(403, false, 'conference full');
             }
             $q = $db->prepare("INSERT IGNORE INTO wolf_conf_members (session_id, agent_id, state) VALUES (?, ?, 'invited')");
-            foreach ($invitees as $id) {
+            foreach ($newInvitees as $id) {
                 $q->execute([$session, $id]);
                 if ($q->rowCount() === 1) {
                     $added[] = $id;
