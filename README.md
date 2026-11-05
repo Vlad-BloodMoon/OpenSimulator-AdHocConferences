@@ -79,15 +79,15 @@ Example config values (never paste a real password into GitHub):
 - No signed conference lifecycle request has been exercised against **the live** BloodMoon API yet. PHP/MySQL CI uses its own disposable database.
 - No Firestorm test on a real OpenSimulator simulator yet (planned: isolated **DisplayName** test simulator).
 - Text chat across simulator processes, invites, join/leave/relogin, viewer voice ring and conference audio are **unverified**.
-- The compiled test DLL is a replacement for `WebRtcVoiceRegionModule.dll`, **not** a complete standalone add-in. Preserve the existing voice files and make a backup before any test.
+- The earlier test DLL built from `master` is superseded; use only the artifact from the workflow for release `v0.9.3.1-webrtc.2`. The compiled test DLL is a replacement for `WebRtcVoiceRegionModule.dll`, **not** a complete standalone add-in. Preserve the existing voice files and make a backup before any test.
 - To enable the patch in a simulator, `[WebRtcVoice] ConferenceApiUrl` must point to `https://bloodmoonpack.com/adhocconf/wolf_api.php`. The existing `CredKeyFile` remains configured, and no `[Wolf] SimSecretPath` is needed. **Do this only on the selected test simulator**, not on production engines.
 - A long-lived release and safer independent simulator/actor authentication remain future work. The current shared key must never be posted or checked into git.
 
 ## Test DLL and CI
 
-The Actions workflow builds OpenSimulator .NET 8 Release with the patch applied and uploads **`WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1`** as an artifact, containing the experimental DLL.
+The Actions workflow checks out the **validated BloodMoon voice release tag `v0.9.3.1-webrtc.2`** (commit `07fca6e6e50d8998e61f3fb066f39013281216ba`), then builds OpenSimulator .NET 8 Release with the AdHoc patch applied and uploads **`WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1`** as an artifact, containing the experimental DLL.
 
-- [Latest verified successful workflow (5 Nov 2026)](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42046505590)
+- [Latest verified successful workflow (5 Nov 2026)](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42050629182)
 - Open the workflow page, scroll to **Artifacts**, and download `WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1` (GitHub login may be required).
 - That specific artifact expires **12 November 2026**; it can be rebuilt by rerunning the workflow. Compilation success is **not** a working Firestorm test.
 
