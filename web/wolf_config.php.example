@@ -2,15 +2,15 @@
 declare(strict_types=1);
 
 // Rename to wolf_config.php, store it outside public access, and restrict file permissions.
-// Test only: authorized BloodMoon simulator hosts, not arbitrary external simulator IPs.
+// Remote simulators are authorized through wolfvoice_admin.servers (status=allowed).
 return [
     'dsn' => 'mysql:host=127.0.0.1;dbname=opensim_adhoc;charset=utf8mb4',
     'db_user' => 'adhoc_user',
     'db_password' => 'CHANGE_ME_DATABASE_PASSWORD',
     // Existing WebRtcVoice CredKeyFile. No second secret is generated.
     // The voice server and the PHP host must have access to the same secret.
-    'existing_cred_key_file' => '/etc/opensim/voice_cred_key',
-    'allowed_ips' => ['127.0.0.1'],
+    'existing_cred_key_file' => '/etc/wolfvoice/cred_key',
+    // Only loopback diagnostics bypass the WolfVoice server registry.\n    'allowed_ips' => ['127.0.0.1', '::1'],
     'max_members' => 25,
     'ttl_seconds' => 21600,
 ];
