@@ -21,11 +21,21 @@
 - `patches/wolfconference-root-routing.patch`: one-line root-only routing change for WolfConference's signed internal envelopes.
 - `docs/TRANSPORT_ANALYSIS.md`: code findings, limits, and test checklist.
 
+## WolfConference-compatible prototype (private tests only)
+
+A second prototype now follows WolfConference's actual request/response format:
+
+- `database/wolf_schema.sql` — new session/member tables; use this instead of the old schema.
+- `web/wolf_api.php` and `web/wolf_config.php.example` — HMAC-authenticated PHP registry.
+- `patches/wolfconference-voice-key-and-root.patch` — allows WolfConference to reuse an **already configured** `[WebRtcVoice] CredKeyFile` when no `[Wolf] SimSecretPath` is set, and routes internal dialog-2 messages to root agents.
+
+**Do not deploy as-is.** It has not been executed or compiled. The PHP host must possess the same existing credential key, and only authorized simulator IPs should access the endpoint. Reusing one key for both voice and conference HMAC deliberately couples their trust boundaries, so its risk needs acceptance before a production deployment. The original independent `web/conferences.php` is retained only as historical groundwork; it is **incompatible** with WolfConference.
+
 ## Security and deployment status
 
 **Do not publish the PHP endpoint on the open Internet.** Its initial access control relies on a trusted source-IP allowlist. That limits which hosts may reach it, but does **not** prove which avatar initiated each action. Therefore it is only groundwork for a restricted, trusted-network test—not a safe public service for independently operated simulators.
 
-A proper simulator/actor trust boundary, a compatible C# add-in, and full cross-process integration are required before release. The existing Display Names project is a reference for packaging (`.addin.xml`, separate DLL, OpenSim.ini configuration, PHP + MySQL backend), not proof that IM conferences work the same way.
+A verified simulator/actor trust boundary, compatibility checks against the patched WolfConference module, and full cross-process integration tests are required before release. The existing Display Names project is a reference for packaging (`.addin.xml`, separate DLL, OpenSim.ini configuration, PHP + MySQL backend), not proof that IM conferences work the same way.
 
 ## Français
 
