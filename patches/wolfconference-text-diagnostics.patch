@@ -29,8 +29,8 @@ diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConferen
                      }
                      string fromName = AvatarName(scene, from);
                      foreach (ConfMember m in c.Members)
-+                        m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: dispatch session={1} from={2} to={3} joined={4}", logHeader, session, from, m.Id, m.Joined);
                      {
++                        m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: dispatch session={1} from={2} to={3} joined={4}", logHeader, session, from, m.Id, m.Joined);
                          DeliverConf(scene, m.Id, m.Joined
                                  ? TextEnvelope("text", from, fromName, c, message)
 @@ -851,6 +855,7 @@
