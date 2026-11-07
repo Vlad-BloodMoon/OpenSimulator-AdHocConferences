@@ -161,16 +161,28 @@ try {
             $count = $db->prepare('SELECT COUNT(*) FROM wolf_conf_members WHERE session_id = ?');
             $count->execute([$session]);
             $existing = (int)$count->fetchColumn();
-            $existingIds = $db->prepare('SELECT agent_id FROM wolf_conf_members WHERE session_id = ?');
+            // A login/crash recovery resets a member to 'invited' in the relogin
+            // action. They are still present in the registry, but their old
+            // Firestorm conference window is gone. Re-sending an invitation
+            // must be allowed; joined users must NEVER be rung again.
+            $existingIds = $db->prepare('SELECT agent_id, state FROM wolf_conf_members WHERE session_id = ?');
             $existingIds->execute([$session]);
-            $known = array_fill_keys($existingIds->fetchAll(PDO::FETCH_COLUMN), true);
+            $known = $existingIds->fetchAll(PDO::FETCH_KEY_PAIR);
             $newInvitees = array_diff_key($invitees, $known);
             if ($existing + count($newInvitees) > (int)$cfg['max_members']) {
                 $db->rollBack();
                 reply(403, false, 'conference full');
             }
             $q = $db->prepare("INSERT IGNORE INTO wolf_conf_members (session_id, agent_id, state) VALUES (?, ?, 'invited')");
-            foreach ($newInvitees as $id) {
+            foreach ($invitees as $id) {
+                if (isset($known[$id])) {
+                    if ($known[$id] === 'invited') {
+                        // Re-invite someone still awaiting acceptance, including
+                        // someone whose viewer reconnected after a crash.
+                        $added[] = $id;
+                    }
+                    continue;
+                }
                 $q->execute([$session, $id]);
                 if ($q->rowCount() === 1) {
                     $added[] = $id;
