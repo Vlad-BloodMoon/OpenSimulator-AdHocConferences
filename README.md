@@ -75,6 +75,7 @@ See [Architecture, deployment and security](docs/ARCHITECTURE.md).
 | `patches/wolfconference-voice-invite-loop.patch` | Prevent voice invitation loops |
 | `patches/webrtcvoice-track-active-conference-sessions.patch` | Track per-avatar active voice sessions |
 | `patches/wolfconference-voice-suppress-active-invites.patch` | Suppress false leave/rejoin notices |
+| `patches/wolfconference-system-sender-opensimulator.patch` | Brand system notifications **OpenSimulator**, not Wolf Territories |
 | `web/wolf_api.php` | HMAC-authenticated conference registry HTTP API |
 | `web/wolf_config.php.example` | Server config template (never commit real keys/passwords) |
 | `database/wolf_schema.sql` | Current MySQL schema |
@@ -92,9 +93,9 @@ The supplied PHP backend is tailored to BloodMoon's WolfVoice allowlist database
 
 ## Build from source
 
-The [GitHub Actions workflow](.github/workflows/check.yml) checks out `Vlad-BloodMoon/opensim` at **`v0.9.3.1-webrtc.2`**, applies **all seven patches in order**, runs `./runprebuild.sh`, compiles `OpenSim.sln` with `dotnet build --configuration Release`, and uploads the DLL and symbols. The workflow also executes PHP syntax, HMAC vectors and disposable MySQL lifecycle tests.
+The [GitHub Actions workflow](.github/workflows/check.yml) checks out `Vlad-BloodMoon/opensim` at **`v0.9.3.1-webrtc.2`**, applies **the seven original fixes and the additional system-message sender patch in order**, runs `./runprebuild.sh`, compiles `OpenSim.sln` with `dotnet build --configuration Release`, and uploads the DLL and symbols. The workflow also executes PHP syntax, HMAC vectors and disposable MySQL lifecycle tests.
 
-Validated binary baseline: [successful run #30](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42395627678). The GitHub release asset is derived from that validated build; see [release notes](RELEASE_NOTES.md).
+Originally field-tested baseline: [run #30](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42395627678). **Current same-name release asset:** corrected maintenance DLL from [successful run #40](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42413642157), with generic **OpenSimulator** notification sender. The PHP API also now supports re-inviting members marked `invited`, but **first-reconnect recovery still needs in-world confirmation**. See [release notes](RELEASE_NOTES.md).
 
 ## Credits
 
