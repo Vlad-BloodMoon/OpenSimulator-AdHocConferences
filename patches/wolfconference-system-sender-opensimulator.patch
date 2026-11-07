@@ -1,0 +1,12 @@
+diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+--- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
++++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+@@ -855,7 +855,7 @@
+                 { "session", OSD.FromUUID(session) },
+                 { "name", OSD.FromString(c?.Name ?? string.Empty) },
+                 { "from", OSD.FromUUID(UUID.Zero) },
+-                { "from_name", OSD.FromString("Wolf Territories") },
++                { "from_name", OSD.FromString("OpenSimulator") },
+                 { "message", OSD.FromString(text) }
+             };
+             DeliverConf(scene, to, p);
