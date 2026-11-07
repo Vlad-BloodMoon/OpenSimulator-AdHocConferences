@@ -76,6 +76,8 @@ jobs:
         run: git -C opensim apply --check ../patches/webrtcvoice-track-active-conference-sessions.patch && git -C opensim apply ../patches/webrtcvoice-track-active-conference-sessions.patch
       - name: Suppress invites to already connected conference users
         run: git -C opensim apply --check ../patches/wolfconference-voice-suppress-active-invites.patch && git -C opensim apply ../patches/wolfconference-voice-suppress-active-invites.patch
+      - name: Use generic OpenSimulator sender for conference notices
+        run: git -C opensim apply --check ../patches/wolfconference-system-sender-opensimulator.patch && git -C opensim apply ../patches/wolfconference-system-sender-opensimulator.patch
       - name: Generate OpenSimulator projects
         working-directory: opensim
         run: ./runprebuild.sh
@@ -87,7 +89,7 @@ jobs:
       - name: Upload patched module for test
         uses: actions/upload-artifact@v4
         with:
-          name: WebRtcVoiceRegionModule-adhoc-NOTIFY-FIX-TEST-0.9.3.1
+          name: WebRtcVoiceRegionModule-adhoc-REINVITE-BRANDING-TEST-0.9.3.1
           path: |
             opensim/bin/WebRtcVoiceRegionModule.dll
             opensim/bin/WebRtcVoiceRegionModule.pdb
