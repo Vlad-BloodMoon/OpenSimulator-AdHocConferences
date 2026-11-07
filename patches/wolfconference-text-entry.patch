@@ -1,7 +1,7 @@
 diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
 --- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
 +++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
-@@ -717,9 +717,12 @@
+@@ -717,7 +717,12 @@
          private void OnClientConferenceMessage(IClientAPI client, GridInstantMessage im)
          {
 +            // Log before any filters: Firestorm's multi-avatar IM uses SessionSend,
