@@ -80,7 +80,7 @@ diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConferen
 +            {
 +                string callerName = AvatarName(scene, caller);
 +                foreach (ConfMember m in v.Members)
-+                    if (m.Id != caller && m.Joined)
++                    if (m.Id != caller)
 +                        DeliverConf(scene, m.Id, VoiceEnvelope(caller, callerName, v, m.Id));
 +                m_log.InfoFormat("{0}[CALL]: {1} rang conference {2}", logHeader, caller, session);
 +            }
