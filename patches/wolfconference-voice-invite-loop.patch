@@ -1,0 +1,107 @@
+diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+--- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
++++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+@@ -68,7 +68,32 @@
+         // pin the fallback secret at startup while the PHP service has rotated.
+         private string ConferenceSecret => m_UseExistingVoiceKey ? CredKey : m_SimSecret;
+         private readonly Dictionary<UUID, Conference> m_Conferences = new Dictionary<UUID, Conference>();
+-        private readonly Dictionary<UUID, DateTime> m_NotConferences = new Dictionary<UUID, DateTime>();
++        private readonly Dictionary<UUID, DateTime> m_NotConferences = new Dictionary<UUID, DateTime>();
++        // Firestorm automatically sends a second call request when a voice invitation
++        // arrives. Suppress repeated invitations, including on destination simulators.
++        private static readonly TimeSpan CONFERENCE_RING_SUPPRESSION = TimeSpan.FromSeconds(30);
++        private readonly Dictionary<UUID, DateTime> m_ConferenceRecentRings = new Dictionary<UUID, DateTime>();
++
++        private void NoteConferenceVoiceInvitation(UUID session)
++        {
++            lock (m_ConferenceRecentRings)
++            {
++                if (m_ConferenceRecentRings.Count > 2000) m_ConferenceRecentRings.Clear();
++                m_ConferenceRecentRings[session] = DateTime.UtcNow;
++            }
++        }
++
++        private bool BeginConferenceVoiceInvitation(UUID session)
++        {
++            lock (m_ConferenceRecentRings)
++            {
++                if (m_ConferenceRecentRings.TryGetValue(session, out DateTime recent)
++                    && DateTime.UtcNow - recent < CONFERENCE_RING_SUPPRESSION) return false;
++                if (m_ConferenceRecentRings.Count > 2000) m_ConferenceRecentRings.Clear();
++                m_ConferenceRecentRings[session] = DateTime.UtcNow;
++                return true;
++            }
++        }
+         // [review] "you are not in it" (403), remembered a minute per session XOR agent, so typing in a session one is
+         // not in does not ask the brain every line.
+         private readonly Dictionary<UUID, DateTime> m_NotMember = new Dictionary<UUID, DateTime>();
+@@ -536,30 +561,30 @@
+                 return true;
+             }
+ 
+-            Conference c = GetConference(scene, caller, session);
+-            if (c is null) return false;
+-            if (!AllowCall(caller))
+-            {
+-                response.StatusCode = (int)HttpStatusCode.Forbidden;
+-                return true;
+-            }
+-            Conference v = Brain(scene, "voice", caller, session, null, out string error, out int _);
+-            if (v is null)
+-            {
+-                m_log.InfoFormat("{0}[CALL]: conference call {1} by {2} refused: {3}", logHeader, session, caller, error);
+-                response.StatusCode = (int)HttpStatusCode.Forbidden;
+-                return true;
+-            }
+-            Remember(v);
+-            RespondCredentials(response, ConfChannel(session), caller);
+-            string callerName = AvatarName(scene, caller);
+-            // Ring everyone else in it. Someone already in the call just accepts it silently
+-            // (llimview.cpp:4277-4283 "you have already started a call").
+-            foreach (ConfMember m in v.Members)
+-                if (m.Id != caller)
+-                    DeliverConf(scene, m.Id, VoiceEnvelope(caller, callerName, v, m.Id));
+-            m_log.InfoFormat("{0}[CALL]: {1} started voice in conference {2}", logHeader, caller, session);
+-            return true;
++            Conference c = GetConference(scene, caller, session);
++            if (c is null) return false;
++            Conference v = Brain(scene, "voice", caller, session, null, out string error, out int _);
++            if (v is null)
++            {
++                m_log.InfoFormat("{0}[CALL]: conference call {1} by {2} refused: {3}", logHeader, session, caller, error);
++                response.StatusCode = (int)HttpStatusCode.Forbidden;
++                return true;
++            }
++            Remember(v);
++            RespondCredentials(response, ConfChannel(session), caller);
++            // Invited viewers automatically issue call again: joining must not
++            // re-ring everyone or exhaust the outbound call rate limit.
++            if (BeginConferenceVoiceInvitation(session) && AllowCall(caller))
++            {
++                string callerName = AvatarName(scene, caller);
++                foreach (ConfMember m in v.Members)
++                    if (m.Id != caller && m.Joined)
++                        DeliverConf(scene, m.Id, VoiceEnvelope(caller, callerName, v, m.Id));
++                m_log.InfoFormat("{0}[CALL]: {1} rang conference {2}", logHeader, caller, session);
++            }
++            else
++                m_log.DebugFormat("{0}[CALL]: {1} joined conference {2} without re-ringing", logHeader, caller, session);
++            return true;
+         }
+ 
+         /// <summary>
+@@ -952,9 +977,11 @@
+                         eq?.ChatterboxInvitation(session, name, from, p["message"].AsString(), to, fromName, IM_SESSION_SEND,
+                                 (uint)Util.UnixTimeSinceEpoch(), false, 0, Vector3.Zero, 1, session, false, bucket);
+                         return true;
+-                    case "voice":
+-                    {
+-                        // As HandleCall's P2P ring, with invitation_type CONFERENCE_SESSION: the viewer asks
++                    case "voice":
++                    {
++                        // Prevent invited avatars from re-inviting the whole room.
++                        NoteConferenceVoiceInvitation(session);
++                        // As HandleCall's P2P ring, with invitation_type CONFERENCE_SESSION: the viewer asks
+                         // "VoiceInviteAdHoc" (llimview.cpp:4236-4241, 5269-5287) and joins with this map.
+                         OSDMap voice = new OSDMap
+                         {
