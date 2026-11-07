@@ -1,98 +1,105 @@
-# OpenSimulator Ad-Hoc Conferences
+# OpenSimulator Ad-Hoc Conferences · WolfVoice WebRTC
 
-**Experimental OpenSimulator 0.9.3.1 / .NET 8 integration** for Firestorm ad-hoc conferences (temporary multi-avatar IM conversations across region processes), with WolfVoice conference rooms. **Not yet validated end-to-end in Firestorm. Do not deploy to production simulators.**
+**Multi-avatar instant-message conferences with optional WebRTC voice calls for OpenSimulator 0.9.3.1 / .NET 8.** Supports residents on **different simulator processes/regions**, using the existing WolfVoice voice integration.
 
-The project follows Lone Wolf's description of `WolfConference.cs` in `WebRtcVoiceRegionModule`: viewer `ChatSessionRequest`, `ChatterBoxSessionStartReply`, dialog 17 for conference text, internal signed grid-IM envelopes (dialog 2), and WebRTC rooms named `conf-<session>`. The patched module reuses the **existing** `[WebRtcVoice] CredKeyFile`; no additional conference signing key is created.
+[![Build and integration checks](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/workflows/check.yml/badge.svg)](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/workflows/check.yml)
+[![GitHub releases](https://img.shields.io/github/v/release/Vlad-BloodMoon/OpenSimulator-AdHocConferences?include_prereleases)](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases)
 
-## Current components
+**Tags / keywords:** OpenSimulator, OpenSim, WebRTC, WolfVoice, voice chat, VoIP, group voice, ad-hoc conference, IM, instant messaging, virtual worlds, Firestorm, .NET 8, Linux.
 
-| File | Purpose |
-| --- | --- |
-| `database/wolf_schema.sql` | The **active** MySQL schema: `wolf_conf_sessions` and `wolf_conf_members` |
-| `web/wolf_api.php` | HMAC-authenticated central conference registry |
-| `web/wolf_config.php.example` | Private configuration template, **never commit real credentials** |
-| `patches/wolfconference-voice-key-and-root.patch` | Existing WolfVoice key fallback and root-only internal IM routing |
-| `.github/workflows/check.yml` | PHP syntax, PHP/MySQL integration, HMAC and .NET 8 OpenSim Release build |
+## What it does
 
-Older `database/schema.sql`, `web/conferences.php`, and `web/config.php.example` are **obsolete experiments**. Do not deploy them.
+- Starts an **ad-hoc group IM** directly in Firestorm, with multiple avatars (not a land/parcel chat and **not** an OpenSimulator group membership).
+- Shares invitations and text messages among participants on **one or multiple simulators**.
+- Lets participants join an optional **WolfVoice WebRTC conference call**, hang up independently, and rejoin without leaving the text IM.
+- Prevents duplicate outgoing messages, recursive voice ringing, and unnecessary call notifications to participants who are already connected.
+- Preserves the existing WebRTC spatial/parcel voice, private voice calls, and normal group voice from the pinned upstream build.
 
-### Authorization
+### Real-world validation (BloodMoon, 7 November 2026)
 
-The PHP API checks an HMAC-SHA256 request signature built from the existing WolfVoice credential file, the simulator/region UUID, agent UUID, timestamp (5-minute window) and raw JSON body. It also checks the **actual TCP peer IP** (`REMOTE_ADDR`, **not** `X-Forwarded-For`) against `wolfvoice_admin.servers`: a record must have `status='allowed'` and matching `resolved_ip` or literal `server_address`. Both automatically discovered (`source='auto'`) and manually added (`source='manual'`) records work; `pending` and `blocked` do not. Only explicit local diagnostic IPs in `allowed_ips` bypass this database lookup.
+**Tested successfully with Firestorm:** multi-avatar IM creation, text exchange without sender echo, voice invitations, individual hang-up/rejoin without forcing others out of voice, and **cross-simulator invitations/text/voice**. The cross-simulator test required `ConferenceApiUrl` on **both** simulators. This is an initial public release of the **BloodMoon-tested integration**, not a claim of compatibility with every OpenSimulator distribution/viewer or an independent security audit.
 
-**Security limitation:** Administrators who possess the shared voice key can generate valid signatures. An allowed simulator is not independently proof of an avatar's identity; HMAC and IP checks alone do not make this ready for untrusted external simulator operators. The PHP process can read the voice key; isolate it from ordinary web applications. Review the identity/trust model before wide release.
+## Downloads
 
-## BloodMoon installation progress — 5 November 2026
+Get the **versioned DLL ZIP** from [GitHub Releases](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases). The DLL comes from the .NET 8 build of **[`Vlad-BloodMoon/opensim` tag `v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2)** plus the patches in this repository.
 
-The following was **performed and checked manually** on `robust-vm`, Ubuntu 24.04:
+**Important:** `WebRtcVoiceRegionModule.dll` is a **replacement for the existing DLL**, **not** a standalone module. You must already have the other matching WebRTC/WolfVoice modules and the required key file(s) from the **same baseline release**. Do **not** mix it with `master`, older builds, Janus-only modules, or arbitrary OpenSimulator versions.
 
-1. Created MySQL database `opensim_adhoc` (`utf8mb4_general_ci`) and imported **`database/wolf_schema.sql`**. Both `wolf_conf_sessions` and `wolf_conf_members` exist.
-2. Created local MySQL account `adhoc_user@localhost`; granted only `SELECT, INSERT, UPDATE, DELETE` on `opensim_adhoc` and **only `SELECT`** on `wolfvoice_admin.servers`. MySQL connectivity and read of **12 allowed servers** verified.
-3. Reused `/etc/wolfvoice/cred_key` (owner `root:wolfvoice`, mode `640`). No new voice key was created.
-4. Installed PHP 8.3 FPM while keeping the existing Apache `mod_php` serving other sites. Created Linux account `adhocconf` (primary group `adhocconf`, supplementary `wolfvoice`); confirmed it can read the existing voice key.
-5. Added dedicated PHP-FPM pool at `/etc/php/8.3/fpm/pool.d/adhocconf.conf`:
+## Quick start — each simulator
+
+1. Back up your current `bin/WebRtcVoiceRegionModule.dll` and stop that simulator.
+2. Replace **only** `bin/WebRtcVoiceRegionModule.dll` with the DLL from the release ZIP; retain the other WolfVoice/WebRTC files.
+3. In that simulator's `wolfvoice.ini` (or corresponding OpenSim configuration), add to **`[WebRtcVoice]`**:
+
    ```ini
-   [adhocconf]
-   user = adhocconf
-   group = adhocconf
-   listen = /run/php/php8.3-fpm-adhocconf.sock
-   listen.owner = www-data
-   listen.group = www-data
-   listen.mode = 0660
-   pm = ondemand
-   pm.max_children = 3
-   pm.process_idle_timeout = 30s
-   pm.max_requests = 500
-   php_admin_flag[log_errors] = on
-   php_admin_value[error_log] = /var/log/php8.3-fpm.log
-   php_admin_value[expose_php] = Off
+   [WebRtcVoice]
+   ; Preserve all existing Enabled, voice service, and key settings.
+   ConferenceApiUrl = https://bloodmoonpack.com/adhocconf/wolf_api.php
    ```
-   `php-fpm8.3 -t` passed; Unix socket verified with `www-data:www-data` ownership and `660` mode.
-6. Enabled Apache `proxy_fcgi` (existing `proxy` was already enabled). Site document root is `/var/www/BloodMoon`, HTTPS vhost `/etc/apache2/sites-available/000-default-le-ssl.conf`. Backed up the latter to `000-default-le-ssl.conf.bak-20261105` before modification.
-7. Created `/var/www/BloodMoon/adhocconf/`; deployed current `web/wolf_api.php`. Config `wolf_config.php` is owned by `louna49400:adhocconf` with `640` permissions so Notepad++/SFTP editing remains possible, the dedicated FPM user can read it, and Apache's ordinary `www-data` cannot. **The real config and database password are only on the server, not on GitHub.**
-8. Added to the SSL virtual host:
-   ```apache
-   <Directory "/var/www/BloodMoon/adhocconf">
-       Options -Indexes -MultiViews
-       AllowOverride None
-       Require all denied
-       <Files "wolf_api.php">
-           Require all granted
-           SetHandler "proxy:unix:/run/php/php8.3-fpm-adhocconf.sock|fcgi://localhost/"
-       </Files>
-   </Directory>
-   ```
-   `apache2ctl configtest` returned `Syntax OK`; Apache was reloaded.
-9. Confirmed externally: `GET /adhocconf/wolf_config.php` → **403**; `GET /adhocconf/wolf_api.php` → **405**, JSON `{"success":false,"error":"POST required"}`. `php -l` passed. Database access and existing voice key readability were verified with the `adhocconf` account.
 
-Example config values (never paste a real password into GitHub):
-```php
-'dsn' => 'mysql:host=127.0.0.1;dbname=opensim_adhoc;charset=utf8mb4',
-'db_user' => 'adhoc_user',
-'db_password' => 'YOUR_PRIVATE_PASSWORD',
-'existing_cred_key_file' => '/etc/wolfvoice/cred_key',
-'allowed_ips' => ['127.0.0.1'], // local diagnostics only; remote IPs come from wolfvoice_admin.servers
+4. Preserve the **existing** `CredKeyFile` setting / credential-key file; **no new `[Wolf] SimSecretPath` is needed** in the supported key-fallback configuration.
+5. Restart the simulator; test a multi-avatar IM, then an optional conference call.
+6. **Repeat steps 1–5 on every participating simulator**, including simulators belonging to other trusted/allowed operators. **Installing the DLL without `ConferenceApiUrl` is insufficient.**
+
+That URL is the **BloodMoon-hosted test/service endpoint**, not a generic hosted service. Access is restricted to permitted hosts, and the service relies on the **shared existing credential secret**. Do not share the secret publicly or assume an unapproved simulator can use that endpoint. Self-hosters can deploy their own endpoint with the server files in this repository.
+
+Full steps: [English installation guide](docs/INSTALLATION.md) · [Guide français](docs/INSTALLATION.fr.md).
+
+## Architecture
+
+```text
+Firestorm A ── OpenSimulator A ─┐
+                               ├── HTTPS signed requests ── Central PHP API ── MySQL registry
+Firestorm B ── OpenSimulator B ─┘
+       │              │
+       └── multi-avatar IM routing ── OpenSimulator grid IM service (signed internal envelope)
+       └── optional voice calls ───── WolfVoice WebRTC server (conf-<session UUID>)
 ```
 
-### Still not tested or finished
+- The **PHP/MySQL registry** stores active conference sessions and member state.
+- Each **simulator module** handles viewer chat-session capabilities, signed internal IMs, and per-avatar voice credentials.
+- The **OpenSimulator IM transfer module** delivers internal conference events between simulator processes; a recipient must be a **root agent** on the destination simulator.
+- The **WolfVoice server** carries audio; the PHP API is **not** the media server.
+- A text conference can exist **without a voice call**.
 
-- No signed conference lifecycle request has been exercised against **the live** BloodMoon API yet. PHP/MySQL CI uses its own disposable database.
-- No Firestorm test on a real OpenSimulator simulator yet (planned: isolated **DisplayName** test simulator).
-- Text chat across simulator processes, invites, join/leave/relogin, viewer voice ring and conference audio are **unverified**.
-- The earlier test DLL built from `master` is superseded; use only the artifact from the workflow for release `v0.9.3.1-webrtc.2`. The compiled test DLL is a replacement for `WebRtcVoiceRegionModule.dll`, **not** a complete standalone add-in. Preserve the existing voice files and make a backup before any test.
-- To enable the patch in a simulator, `[WebRtcVoice] ConferenceApiUrl` must point to `https://bloodmoonpack.com/adhocconf/wolf_api.php`. The existing `CredKeyFile` remains configured, and no `[Wolf] SimSecretPath` is needed. **Do this only on the selected test simulator**, not on production engines.
-- A long-lived release and safer independent simulator/actor authentication remain future work. The current shared key must never be posted or checked into git.
+See [Architecture, deployment and security](docs/ARCHITECTURE.md).
 
-## Test DLL and CI
+## Source tree
 
-The Actions workflow checks out the **validated BloodMoon voice release tag `v0.9.3.1-webrtc.2`** (commit `07fca6e6e50d8998e61f3fb066f39013281216ba`), then builds OpenSimulator .NET 8 Release with the AdHoc patch applied and uploads **`WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1`** as an artifact, containing the experimental DLL.
+| Path | Description |
+| --- | --- |
+| `patches/wolfconference-voice-key-and-root.patch` | Reuse existing credentials and send internal IM to root avatar |
+| `patches/wolfconference-text-diagnostics.patch` | Multi-avatar IM diagnostics |
+| `patches/wolfconference-text-entry.patch` | Ensure conference text reaches the module |
+| `patches/wolfconference-text-no-self-echo.patch` | Avoid duplicate local sender text |
+| `patches/wolfconference-voice-invite-loop.patch` | Prevent voice invitation loops |
+| `patches/webrtcvoice-track-active-conference-sessions.patch` | Track per-avatar active voice sessions |
+| `patches/wolfconference-voice-suppress-active-invites.patch` | Suppress false leave/rejoin notices |
+| `web/wolf_api.php` | HMAC-authenticated conference registry HTTP API |
+| `web/wolf_config.php.example` | Server config template (never commit real keys/passwords) |
+| `database/wolf_schema.sql` | Current MySQL schema |
+| `.github/workflows/check.yml` | PHP/MySQL tests and pinned .NET 8 build |
 
-- [Latest verified successful workflow (5 Nov 2026)](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42050629182)
-- Open the workflow page, scroll to **Artifacts**, and download `WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1` (GitHub login may be required).
-- That specific artifact expires **12 November 2026**; it can be rebuilt by rerunning the workflow. Compilation success is **not** a working Firestorm test.
+**Legacy prototype files** `database/schema.sql`, `web/conferences.php`, and `web/config.php.example` are obsolete; **do not deploy** them.
 
-## Résumé français
+## Security and operational limits
 
-Conférences IM éphémères entre avatars, y compris sur des processus OpenSimulator différents, avec voix WebRTC à tester ensuite. Le service central PHP/MySQL est installé sur BloodMoon et vérifié pour les accès de base, HTTPS et permissions. Les IP autorisées sont reprises de `wolfvoice_admin.servers`. **Le module Firestorm/OpenSimulator n'a pas encore été testé en conditions réelles.**
+**Important: trusted-simulator model only.** The existing WolfVoice credential key is reused for conference HMAC requests and internal-grid IM envelopes. Any operator holding this shared secret can potentially impersonate conference actors; the allowlist checks source IP but **does not cryptographically prove the avatar identity**. It is **not safe to distribute that key to arbitrary/untrusted operators**.
 
-Documentation de référence : [développer des add-ins OpenSimulator](http://opensimulator.org/wiki/Developing_OpenSim_Addins/fr).
+The API requires HTTPS, signed request metadata, a valid allowed simulator IP (via `wolfvoice_admin.servers` or the local diagnostics list), and an isolated PHP runtime. Never commit credentials. Protect the central server, back up its database, and review the trust model before broad federation.
+
+The supplied PHP backend is tailored to BloodMoon's WolfVoice allowlist database and **requires adaptation for an independent deployment**. Viewers, networking, security settings and other grid modules can affect compatibility. Full external deployment and third-party security auditing remain outside this release's validation.
+
+## Build from source
+
+The [GitHub Actions workflow](.github/workflows/check.yml) checks out `Vlad-BloodMoon/opensim` at **`v0.9.3.1-webrtc.2`**, applies **all seven patches in order**, runs `./runprebuild.sh`, compiles `OpenSim.sln` with `dotnet build --configuration Release`, and uploads the DLL and symbols. The workflow also executes PHP syntax, HMAC vectors and disposable MySQL lifecycle tests.
+
+Validated binary baseline: [successful run #30](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42395627678). The GitHub release asset is derived from that validated build; see [release notes](RELEASE_NOTES.md).
+
+## Credits
+
+- **WolfVoice / Lone Wolf**, WolfGrid: original WolfVoice integration and valuable work on OpenSimulator WebRTC voice.
+- **OpenSimulator** community and Firestorm viewer contributors.
+- **BloodMoon**: deployment, integration, testing and multi-simulator validation.
+
+This repository is an **independent integration project**; it is not a replacement for the upstream WolfVoice server or the OpenSimulator source repository.
