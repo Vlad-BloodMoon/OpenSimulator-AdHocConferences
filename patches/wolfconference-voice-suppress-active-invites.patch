@@ -45,7 +45,7 @@ diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConferen
          // not in does not ask the brain every line.
          private readonly Dictionary<UUID, DateTime> m_NotMember = new Dictionary<UUID, DateTime>();
          private static readonly TimeSpan NOT_MEMBER_CACHE = TimeSpan.FromMinutes(1);
-@@ -179,8 +214,10 @@
+@@ -179,14 +214,17 @@
                  }, null, "WolfConferenceRelogin");
              }
              // -= first: a presence made root twice must not get every message twice.
@@ -55,10 +55,6 @@ diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConferen
 +            lock (m_ConferenceVoiceConnections) m_ConferenceVoiceConnections.Remove(sp.UUID);
 +            sp.ControllingClient.OnInstantMessage -= OnClientConferenceMessage;
 +            sp.ControllingClient.OnInstantMessage += OnClientConferenceMessage;
-             m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: handler attached avatar={1} region={2}", logHeader, sp.UUID, sp.Scene.RegionInfo.RegionName);
-         }
- 
-@@ -184,9 +221,10 @@
              m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: handler attached avatar={1} region={2}", logHeader, sp.UUID, sp.Scene.RegionInfo.RegionName);
          }
  
