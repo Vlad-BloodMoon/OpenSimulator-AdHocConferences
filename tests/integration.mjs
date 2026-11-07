@@ -53,7 +53,26 @@ assert.equal(r.status, 200, JSON.stringify(r.body));
 assert.deepEqual(r.body.added, [later]);
 
 r = await request('invite', guest, { invitees: [later] });
-assert.deepEqual(r.body.added, [], 'duplicate invites must be idempotent');
+assert.deepEqual(r.body.added, [later], 'pending invitee can be invited again after losing their viewer session');
+
+r = await request('accept', later);
+assert.equal(r.status, 200, JSON.stringify(r.body));
+r = await request('invite', guest, { invitees: [later] });
+assert.deepEqual(r.body.added, [], 'already joined participants must not be re-invited');
+
+// Crash/relogin: the viewer has lost its old conference window and the registry
+// resets the member from joined to invited. A fellow joined participant must
+// be able to resend an invitation without removing the conference membership.
+r = await request('relogin', guest);
+assert.equal(r.status, 200, JSON.stringify(r.body));
+r = await request('members', owner);
+assert.equal(r.body.members.find(m => m.agent === guest).state, 'invited');
+r = await request('invite', owner, { invitees: [guest] });
+assert.deepEqual(r.body.added, [guest], 'reconnected avatar must receive a fresh invitation');
+r = await request('accept', guest);
+assert.equal(r.status, 200, JSON.stringify(r.body));
+r = await request('invite', owner, { invitees: [guest] });
+assert.deepEqual(r.body.added, [], 'do not re-invite a connected participant');
 
 r = await request('voice', owner);
 assert.equal(r.status, 200, JSON.stringify(r.body));
