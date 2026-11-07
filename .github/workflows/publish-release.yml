@@ -19,11 +19,11 @@ jobs:
       - name: Check out the documented release source
         uses: actions/checkout@v4
 
-      - name: Download validated OpenSimulator module from successful build #30
+      - name: Download corrected regional DLL from passing compile #40
         uses: actions/download-artifact@v4
         with:
-          name: WebRtcVoiceRegionModule-adhoc-NOTIFY-FIX-TEST-0.9.3.1
-          run-id: 42395627678
+          name: WebRtcVoiceRegionModule-adhoc-REINVITE-BRANDING-TEST-0.9.3.1
+          run-id: 42413642157
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: tested-module
 
@@ -39,20 +39,14 @@ jobs:
           sha256sum WebRtcVoiceRegionModule-AdHocConferences-0.9.3.1-v0.1.0.zip > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
-      - name: Create public GitHub release and tag from verified binary
+      - name: Refresh same-tag v0.1.0 binary and checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          if gh release view v0.1.0 >/dev/null 2>&1; then
-            echo "Release v0.1.0 already exists; refusing to silently overwrite assets"
-            exit 1
-          fi
-          gh release create v0.1.0 \
+          test "$(gh api repos/${GITHUB_REPOSITORY}/actions/runs/42413642157 --jq .conclusion)" = success
+          gh release upload v0.1.0 \
             WebRtcVoiceRegionModule-AdHocConferences-0.9.3.1-v0.1.0.zip \
-            SHA256SUMS.txt \
-            --title "v0.1.0 – OpenSimulator Ad-Hoc IM + WolfVoice WebRTC conferences" \
-            --notes-file RELEASE_NOTES.md \
-            --target "${GITHUB_SHA}" \
-            --latest
+            SHA256SUMS.txt --clobber
+          gh release edit v0.1.0 --notes-file RELEASE_NOTES.md --latest
