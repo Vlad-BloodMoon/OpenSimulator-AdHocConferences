@@ -64,6 +64,8 @@ jobs:
           dotnet-version: 8.0.x
       - name: Apply WolfConference patch
         run: git -C opensim apply ../patches/wolfconference-voice-key-and-root.patch
+      - name: Apply multi-avatar IM diagnostics
+        run: git -C opensim apply --check ../patches/wolfconference-text-diagnostics.patch && git -C opensim apply ../patches/wolfconference-text-diagnostics.patch
       - name: Generate OpenSimulator projects
         working-directory: opensim
         run: ./runprebuild.sh
@@ -75,7 +77,7 @@ jobs:
       - name: Upload patched module for test
         uses: actions/upload-artifact@v4
         with:
-          name: WebRtcVoiceRegionModule-adhoc-TEST-0.9.3.1
+          name: WebRtcVoiceRegionModule-adhoc-TEXT-DIAG-0.9.3.1
           path: |
             opensim/bin/WebRtcVoiceRegionModule.dll
             opensim/bin/WebRtcVoiceRegionModule.pdb
