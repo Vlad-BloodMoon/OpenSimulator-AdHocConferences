@@ -14,13 +14,21 @@
 
 ## Validation
 
-Tested by BloodMoon in Firestorm with multiple avatars on one and **two different** OpenSimulator simulators. CI [run #30](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42395627678): .NET 8 Release build + DLL validation, PHP syntax, HMAC and MySQL lifecycle tests **passed**.
+Tested by BloodMoon in Firestorm with multiple avatars on one and **two different** OpenSimulator simulators. CI baseline [run #30](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42395627678), plus maintenance [run #40](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42413642157): .NET 8 Release build + DLL validation, PHP syntax, HMAC and MySQL lifecycle tests **passed**. Crash/relogin re-invitation still requires live user validation.
 
 ## Binary provenance
 
-**Use the binary distributed in the GitHub Release assets.** It is packaged from the successful **run #30** artifact `WebRtcVoiceRegionModule-adhoc-NOTIFY-FIX-TEST-0.9.3.1` (artifact ID `13582834356`), compiled using [`Vlad-BloodMoon/opensim` tag `v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2) and this repository's seven patches.
+**Use the binary distributed in the GitHub Release assets.** Maintenance assets are repackaged from successful **run #40** artifact `WebRtcVoiceRegionModule-adhoc-REINVITE-BRANDING-TEST-0.9.3.1` (artifact ID `13590187364`), compiled using [`Vlad-BloodMoon/opensim` tag `v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2) and this repository's seven tested baseline patches plus the generic sender-name patch.
 
 The release ZIP contains `WebRtcVoiceRegionModule.dll` and its `.pdb` symbols. **Replace the existing DLL only** on each compatible simulator; do not mix versions or replace the other WebRTC files.
+
+## Maintenance refresh (7 November 2026)
+
+- Conference system messages now identify as **OpenSimulator** instead of **Wolf Territories**.
+- The PHP registry now permits **re-inviting an existing member in the `invited` state** (including after a login reset), but will not re-invite members marked `joined`.
+- This maintenance change preserves the original release name and filenames; **checksums change** when the ZIP is refreshed. Download new checksums if verifying an updated package.
+- **Still to validate in-world:** first-login resets are not always observed immediately; the PHP fix alone does not handle a recipient still marked `joined` after a crash. The release is not evidence that that intermittent behavior is resolved.
+- Deploying the new PHP file to the production web host is a **separate manual server step**. The GitHub release does not update the live PHP service.
 
 ## Configuration (required on *every* simulator)
 
