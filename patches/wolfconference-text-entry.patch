@@ -1,0 +1,17 @@
+diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+--- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
++++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+@@ -717,9 +717,12 @@
+         private void OnClientConferenceMessage(IClientAPI client, GridInstantMessage im)
+         {
++            // Log before any filters: Firestorm's multi-avatar IM uses SessionSend,
++            // and a suppressed packet would otherwise leave no evidence.
++            m_log.InfoFormat("{0}[CONF-TEXT-ENTRY]: viewer IM dialog={1} fromGroup={2} session={3} avatar={4}", logHeader, im.dialog, im.fromGroup, im.imSessionID, client.AgentId);
+             if (im.dialog != IM_SESSION_SEND && im.dialog != IM_SESSION_LEAVE) return;
+-            if (ConferenceSecret.Length == 0 || im.fromGroup) return;
++            // Do not use the viewer-controlled fromGroup flag to discard ad-hoc IMs.
++            // Actual group session ids and member access are checked below.
++            if (ConferenceSecret.Length == 0) return;
+             UUID session = new UUID(im.imSessionID);
+             UUID from = client.AgentId;
+             if (session.IsZero()) return;
