@@ -1,0 +1,90 @@
+diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+--- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
++++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+@@ -94,7 +94,42 @@
+                 return true;
+             }
+         }
+-        // [review] "you are not in it" (403), remembered a minute per session XOR agent, so typing in a session one is
++        // Keep track of who is ACTUALLY connected to a conference voice channel.
++        // This only controls viewer notifications; it never changes voice admission.
++        private readonly Dictionary<UUID, Tuple<UUID, string>> m_ConferenceVoiceConnections
++            = new Dictionary<UUID, Tuple<UUID, string>>();
++
++        private void TrackConferenceVoiceConnection(UUID avatar, string channel, string viewerSession)
++        {
++            if (string.IsNullOrEmpty(viewerSession)) return;
++            lock (m_ConferenceVoiceConnections)
++            {
++                if (channel.StartsWith("conf-", StringComparison.Ordinal)
++                    && UUID.TryParse(channel.Substring(5), out UUID conference))
++                    m_ConferenceVoiceConnections[avatar] = Tuple.Create(conference, viewerSession);
++                else
++                    m_ConferenceVoiceConnections.Remove(avatar);
++            }
++        }
++
++        private void ForgetConferenceVoiceConnection(UUID avatar, string viewerSession)
++        {
++            lock (m_ConferenceVoiceConnections)
++            {
++                if (m_ConferenceVoiceConnections.TryGetValue(avatar, out Tuple<UUID, string> live)
++                    && live.Item2 == viewerSession)
++                    m_ConferenceVoiceConnections.Remove(avatar);
++            }
++        }
++
++        private bool ConferenceVoiceAlreadyConnected(UUID avatar, UUID conference)
++        {
++            lock (m_ConferenceVoiceConnections)
++                return m_ConferenceVoiceConnections.TryGetValue(avatar, out Tuple<UUID, string> live)
++                    && live.Item1 == conference;
++        }
++
++        // [review] "you are not in it" (403), remembered a minute per session XOR agent, so typing in a session one is
+         // not in does not ask the brain every line.
+         private readonly Dictionary<UUID, DateTime> m_NotMember = new Dictionary<UUID, DateTime>();
+         private static readonly TimeSpan NOT_MEMBER_CACHE = TimeSpan.FromMinutes(1);
+@@ -179,8 +214,10 @@
+                 }, null, "WolfConferenceRelogin");
+             }
+             // -= first: a presence made root twice must not get every message twice.
+-            sp.ControllingClient.OnInstantMessage -= OnClientConferenceMessage;
+-            sp.ControllingClient.OnInstantMessage += OnClientConferenceMessage;
++            // A new root presence must not inherit a stale voice connection.
++            lock (m_ConferenceVoiceConnections) m_ConferenceVoiceConnections.Remove(sp.UUID);
++            sp.ControllingClient.OnInstantMessage -= OnClientConferenceMessage;
++            sp.ControllingClient.OnInstantMessage += OnClientConferenceMessage;
+             m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: handler attached avatar={1} region={2}", logHeader, sp.UUID, sp.Scene.RegionInfo.RegionName);
+         }
+ 
+@@ -184,9 +221,10 @@
+             m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: handler attached avatar={1} region={2}", logHeader, sp.UUID, sp.Scene.RegionInfo.RegionName);
+         }
+ 
+-        private void OnMakeChildAgentConf(ScenePresence sp)
+-        {
+-            sp.ControllingClient.OnInstantMessage -= OnClientConferenceMessage;
++        private void OnMakeChildAgentConf(ScenePresence sp)
++        {
++            lock (m_ConferenceVoiceConnections) m_ConferenceVoiceConnections.Remove(sp.UUID);
++            sp.ControllingClient.OnInstantMessage -= OnClientConferenceMessage;
+         }
+ 
+         // ------------------------------------------------------------------------------ the brain
+@@ -977,9 +1015,12 @@
+                         eq?.ChatterboxInvitation(session, name, from, p["message"].AsString(), to, fromName, IM_SESSION_SEND,
+                                 (uint)Util.UnixTimeSinceEpoch(), false, 0, Vector3.Zero, 1, session, false, bucket);
+                         return true;
+-                    case "voice":
+-                    {
+-                        // Prevent invited avatars from re-inviting the whole room.
++                    case "voice":
++                    {
++                        // A participant already in this voice room must not receive another
++                        // ChatterBoxInvitation: Firestorm shows fake leave/rejoin notices.
++                        if (ConferenceVoiceAlreadyConnected(to, session)) return true;
++                        // Prevent invited avatars from re-inviting the whole room.
+                         NoteConferenceVoiceInvitation(session);
+                         // As HandleCall's P2P ring, with invitation_type CONFERENCE_SESSION: the viewer asks
+                         // "VoiceInviteAdHoc" (llimview.cpp:4236-4241, 5269-5287) and joins with this map.
