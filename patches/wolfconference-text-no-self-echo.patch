@@ -1,0 +1,12 @@
+diff --git a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+--- a/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
++++ b/OpenSim/Addons/os-webrtc-janus/WebRtcVoiceRegionModule/WolfConference.cs
+@@ -754,6 +754,8 @@
+                     string fromName = AvatarName(scene, from);
+                     foreach (ConfMember m in c.Members)
+                     {
++                        // Firestorm displays the sender's own conference IM locally.
++                        if (m.Id == from) continue;
+                         m_log.InfoFormat("{0}[CONF-TEXT-DIAG]: dispatch session={1} from={2} to={3} joined={4}", logHeader, session, from, m.Id, m.Joined);
+                         DeliverConf(scene, m.Id, m.Joined
+                                 ? TextEnvelope("text", from, fromName, c, message)
