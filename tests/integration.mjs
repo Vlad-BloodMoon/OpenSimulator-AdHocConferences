@@ -60,13 +60,13 @@ assert.equal(r.status, 200, JSON.stringify(r.body));
 r = await request('invite', guest, { invitees: [later] });
 assert.deepEqual(r.body.added, [], 'already joined participants must not be re-invited');
 
-// Crash/relogin: the viewer has lost its old conference window and the registry
-// resets the member from joined to invited. A fellow joined participant must
-// be able to resend an invitation without removing the conference membership.
+// Crash/relogin: the viewer has lost its old conference window.
+// The old membership must be removed so WebRTC cannot retry a ghost conference
+// while teleporting; the avatar can still be freshly invited by another member.
 r = await request('relogin', guest);
 assert.equal(r.status, 200, JSON.stringify(r.body));
 r = await request('members', owner);
-assert.equal(r.body.members.find(m => m.agent === guest).state, 'invited');
+assert.equal(r.body.members.some(m => m.agent === guest), false, 'login must remove the stale conference membership');
 r = await request('invite', owner, { invitees: [guest] });
 assert.deepEqual(r.body.added, [guest], 'reconnected avatar must receive a fresh invitation');
 r = await request('accept', guest);
@@ -90,6 +90,6 @@ assert.equal(r.status, 200, JSON.stringify(r.body));
 
 r = await request('members', owner);
 assert.equal(r.status, 200, JSON.stringify(r.body));
-assert.equal(r.body.members.find(m => m.agent === owner).state, 'invited');
+assert.equal(r.status, 403, 'relogged owner is no longer a member of the old conference');
 
 console.log('WolfConference PHP + MySQL integration: PASS');
