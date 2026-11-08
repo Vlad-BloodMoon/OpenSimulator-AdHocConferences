@@ -89,7 +89,6 @@ r = await request('relogin', owner);
 assert.equal(r.status, 200, JSON.stringify(r.body));
 
 r = await request('members', owner);
-assert.equal(r.status, 200, JSON.stringify(r.body));
 assert.equal(r.status, 403, 'relogged owner is no longer a member of the old conference');
 
 console.log('WolfConference PHP + MySQL integration: PASS');
