@@ -118,7 +118,11 @@ try {
     $db->exec('DELETE FROM wolf_conf_sessions WHERE expires_at <= UTC_TIMESTAMP() LIMIT 100');
 
     if ($action === 'relogin') {
-        $q = $db->prepare("UPDATE wolf_conf_members SET state = 'invited' WHERE agent_id = ?");
+        // A new viewer session has no old AdHoc conference windows. Keeping the
+        // member as 'invited' leaves a stale voice room that Firestorm may retry
+        // across region teleports, delaying travel. Rejoin requires a fresh
+        // invitation; other participants and conference sessions stay intact.
+        $q = $db->prepare('DELETE FROM wolf_conf_members WHERE agent_id = ?');
         $q->execute([$actor]);
         $db->commit();
         reply(200, true, '', ['members' => []]);
