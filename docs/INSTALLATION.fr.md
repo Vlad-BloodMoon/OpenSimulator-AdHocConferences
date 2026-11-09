@@ -4,6 +4,14 @@
 
 **Version validée :** OpenSimulator **0.9.3.1**, **.NET 8**, module WebRTC/WolfVoice fondé sur la release [`v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2). Tests concluants le **7 novembre 2026** sur BloodMoon avec des avatars présents sur **deux simulateurs différents**.
 
+## Installation recommandée pour un nouvel utilisateur
+
+**Utilise les trois éléments compatibles, pas trois jeux de DLL** : [serveur BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0), **les trois paires DLL/PDB de [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)**, et **l'API PHP/MySQL de ce dépôt à installer à part**. La DLL de conférence est déjà intégrée à la release `.3`. **Ne pas installer une DLL plus ancienne par-dessus.** [Guide complet](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md).
+
+L'adresse `https://conference.example.org/adhocconf/wolf_api.php` est **un exemple fictif** : remplace-la par le domaine HTTPS qui héberge **ton propre** `wolf_api.php`. La véritable API BloodMoon n'est pas accessible librement. Renseigne `ConferenceApiUrl` sur **tous** les simulateurs participants.
+
+Les anciennes indications de remplacement d'une DLL unique ci-dessous concernent les installations historiques basées sur `.2`, pas une nouvelle installation complète en `.3`.
+
 ## Fonctionnement
 
 - Conférences **IM à plusieurs avatars** dans Firestorm, indépendantes des groupes OpenSimulator.
