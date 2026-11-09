@@ -71,7 +71,7 @@ Importer **le schéma fourni par ce dépôt** :
 mysql -u root -p opensim_adhoc < database/wolf_schema.sql
 ```
 
-**Dépendance à prévoir :** le PHP de cette version interroge `wolfvoice_admin.servers` pour y rechercher une adresse IP dont `status='allowed'`, en comparant `resolved_ip` et `server_address`. Cette table **n'est pas créée par `wolf_schema.sql`**. Si ton serveur vocal n'a pas déjà ce registre, il faut **créer un registre compatible et accorder uniquement SELECT à l'utilisateur PHP, ou adapter la requête du PHP à ton système de liste blanche**. Il n'existe pas d'installation autonome entièrement automatique de cette partie.
+**Installation autonome :** dans `wolf_config.php`, définir `'authorization_source' => 'local'` et renseigner `'trusted_simulator_ips' => ['IP_PUBLIQUE_DU_SIMULATEUR']` (remplacer par la véritable IP sortante de chaque simulateur). **Aucune table `wolfvoice_admin.servers` n'est nécessaire dans ce mode.** Le mode historique `'bloodmoon_db'` continue d'utiliser cette table pour les installations BloodMoon existantes. Sans liste d'IP autorisées, l'API refuse toutes les requêtes.
 
 ### 3. Configurer PHP et l'hébergement HTTPS
 
