@@ -93,25 +93,37 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
-    // The same authorization source used by WolfVoice's administration:
-    // automatically and manually registered hosts must both be status=allowed.
-    // The local list is only for on-server diagnostics; it is not a second
-    // remote-server allowlist. Never trust X-Forwarded-For here.
+    // Standalone mode authorizes explicitly configured trusted simulator IPs.
+    // Legacy BloodMoon deployments retain their original DB policy by default.
+    // Never trust X-Forwarded-For: the network must deliver the real source IP
+    // to REMOTE_ADDR. These checks supplement, not replace, the HMAC secret.
     $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
     if (!filter_var($clientIp, FILTER_VALIDATE_IP)) {
         reply(403, false, 'host not allowed');
     }
-    if (!in_array($clientIp, $cfg['allowed_ips'] ?? [], true)) {
-        $host = $db->prepare(
-            "SELECT 1 FROM wolfvoice_admin.servers
-             WHERE status = 'allowed'
-               AND (resolved_ip = ? OR server_address = ?)
-             LIMIT 1"
-        );
-        $host->execute([$clientIp, $clientIp]);
-        if (!$host->fetchColumn()) {
+    $authSource = $cfg['authorization_source'] ?? 'bloodmoon_db';
+    if ($authSource === 'local') {
+        $trusted = $cfg['trusted_simulator_ips'] ?? [];
+        if (!is_array($trusted) || !in_array($clientIp, $trusted, true)) {
             reply(403, false, 'host not allowed');
         }
+    } elseif ($authSource === 'bloodmoon_db') {
+        // Existing installations: preserve the WolfVoice admin allowlist.
+        // Local loopback addresses are supported for on-host diagnostics only.
+        if (!in_array($clientIp, $cfg['allowed_ips'] ?? [], true)) {
+            $host = $db->prepare(
+                "SELECT 1 FROM wolfvoice_admin.servers
+                 WHERE status = 'allowed'
+                   AND (resolved_ip = ? OR server_address = ?)
+                 LIMIT 1"
+            );
+            $host->execute([$clientIp, $clientIp]);
+            if (!$host->fetchColumn()) {
+                reply(403, false, 'host not allowed');
+            }
+        }
+    } else {
+        reply(503, false, 'invalid authorization configuration');
     }
     $db->beginTransaction();
     // Bounded cleanup: expired sessions cascade-delete their memberships.
