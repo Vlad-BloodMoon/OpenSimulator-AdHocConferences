@@ -34,7 +34,7 @@ The release ZIP contains `WebRtcVoiceRegionModule.dll` and its `.pdb` symbols. *
 
 ```ini
 [WebRtcVoice]
-ConferenceApiUrl = https://bloodmoonpack.com/adhocconf/wolf_api.php
+ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
 ```
 
 The BloodMoon endpoint is restricted to approved trusted simulators. Self-hosters can deploy their own PHP/MySQL backend; see [English installation](docs/INSTALLATION.md) and [French installation](docs/INSTALLATION.fr.md).
