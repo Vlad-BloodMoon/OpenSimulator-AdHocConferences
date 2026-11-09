@@ -32,7 +32,7 @@ Fonctionnalités testées sur BloodMoon avec des viewers Firestorm compatibles, 
 1. Préparer un hébergement HTTPS, PHP 8.3+ avec PDO MySQL et MySQL 8.
 2. Importer `database/wolf_schema.sql` dans une base dédiée.
 3. Installer `web/wolf_api.php` et créer le fichier privé `wolf_config.php` à partir de `web/wolf_config.php.example`.
-4. Configurer la clé existante de credential et le contrôle des simulateurs autorisés. **La version actuelle de l'API dépend de la table `wolfvoice_admin.servers`, à fournir ou à adapter.** Ne pas se contenter d'importer les tables de conférences.
+4. Configurer la clé existante de credential et le contrôle des simulateurs autorisés. **En mode autonome, configurer `authorization_source = local` et les IP autorisées dans `trusted_simulator_ips`, sans dépendre de `wolfvoice_admin.servers`.** Ne pas se contenter d'importer les tables de conférences.
 5. Sur **chaque simulateur**, dans `[WebRtcVoice]`, ajouter l'adresse de **sa propre** API :
 
 ```ini
@@ -49,7 +49,7 @@ ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
 
 Le fonctionnement actuel réutilise une clé de credential partagée pour signer des requêtes. L'accès doit être réservé aux administrateurs de simulateurs **de confiance**. Une IP autorisée et une signature valide n'authentifient pas indépendamment l'avatar : ne pas ouvrir ce service à des administrateurs inconnus sans renforcer ce mécanisme.
 
-Ne jamais publier les clés privées, les mots de passe ou les fichiers de configuration opérationnelle. La version actuelle du backend est adaptée à l'architecture BloodMoon et peut demander des ajustements pour une grille indépendante.
+Ne jamais publier les clés privées, les mots de passe ou les fichiers de configuration opérationnelle. Le mode `local` est prévu pour les installations indépendantes. Le mode historique `bloodmoon_db` reste disponible pour BloodMoon.
 
 ## Remerciements
 
