@@ -35,33 +35,65 @@ ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
 
 The historical `v0.1.0` regional-DLL-only package is for developers working with the original `.2` baseline, **not an extra module to install on top of `.3`**.
 
-## B. Central registry installation — for a *self-hosted, trusted* deployment
+## Self-host your PHP/MySQL conference API — step by step
 
-**BloodMoon administrators:** the current deployment already uses a private BloodMoon conference endpoint; these steps describe the components for another **trusted** installation, not a command to overwrite the live environment.
+These steps assume **your own** Ubuntu HTTPS web host, PHP 8.3+ with PDO MySQL, and MySQL 8. They are for a new trusted deployment, **not for modifying the running BloodMoon production service**. Back up existing settings and never publish private voice keys.
 
-1. Prepare a dedicated MySQL 8 database with UTF-8 support. Import **`database/wolf_schema.sql`** (not the obsolete prototype schema). This creates `wolf_conf_sessions` and `wolf_conf_members`.
-2. Create a low-privilege database user with `SELECT, INSERT, UPDATE, DELETE` on the conference database. **The current `wolf_api.php` also queries `wolfvoice_admin.servers` for `status='allowed'` and the configured source IP**; grant narrowly scoped `SELECT` on that table and provide a compatible allowlist, or adapt the code to your own trusted-host registry. The PHP does **not** work unchanged without that dependency.
-3. Host **`web/wolf_api.php`** on HTTPS with PHP 8.3+ and PDO MySQL. Copy **`web/wolf_config.php.example`** to `wolf_config.php` and set your database DSN, username, password, `existing_cred_key_file`, limits and diagnostic IPs. Restrict permissions so only its dedicated PHP process can read secrets.
-4. Isolate the PHP-FPM pool/service and deny direct HTTP access to `wolf_config.php`. Serve **only** `wolf_api.php`. In the BloodMoon Apache/FPM deployment, GET on the config returns **403** and GET on the API returns **405** because it accepts signed POST requests.
-5. Ensure PHP can read the **existing** WolfVoice credential key and that approved simulators have the compatible key. IP checks use `REMOTE_ADDR`, not untrusted proxy headers.
-6. Set `ConferenceApiUrl` on **every** simulator to your HTTPS API. A normal browser visit to that URL is not a working conference test: POST bodies must be authenticated by HMAC.
+### 1. Obtain the current API source
 
-### Example PHP configuration
-
-```php
-<?php
-return [
-    'dsn' => 'mysql:host=127.0.0.1;dbname=opensim_adhoc;charset=utf8mb4',
-    'db_user' => 'adhoc_user',
-    'db_password' => 'REPLACE_WITH_PRIVATE_VALUE',
-    'existing_cred_key_file' => '/etc/wolfvoice/cred_key',
-    'allowed_ips' => ['127.0.0.1', '::1'], // diagnostics only
-    'max_members' => 25,
-    'ttl_seconds' => 21600,
-];
+```bash
+git clone https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences.git
+cd OpenSimulator-AdHocConferences
 ```
 
-**Critical trust constraint:** an operator with the shared voice signing key can sign requests for different agent UUIDs. Being on the IP allowlist does **not** prove avatar identity. Do not enable untrusted third-party simulators with this shared secret. Prefer a stronger per-simulator identity design before open federation.
+Use `database/wolf_schema.sql`, `web/wolf_api.php` and `web/wolf_config.php.example`. Do **not** deploy the obsolete prototype files `database/schema.sql` or `web/conferences.php`.
+
+### 2. Create your MySQL database
+
+Run the following as a MySQL administrator, replacing the sample password:
+
+```sql
+CREATE DATABASE opensim_adhoc CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'adhoc_user'@'localhost' IDENTIFIED BY 'REPLACE_WITH_A_STRONG_SECRET';
+GRANT SELECT, INSERT, UPDATE, DELETE ON opensim_adhoc.* TO 'adhoc_user'@'localhost';
+```
+
+Import the supplied schema:
+
+```bash
+mysql -u root -p opensim_adhoc < database/wolf_schema.sql
+```
+
+**Important dependency:** the current API queries `wolfvoice_admin.servers` for a record with `status='allowed'`, matching `resolved_ip` or `server_address`. This registry is **not created by `wolf_schema.sql`**. If your infrastructure does not already have it, create a compatible trusted-server registry and grant the API's SQL user narrowly scoped SELECT permission, **or adapt the PHP to your own allowlist**. The current backend is not fully plug-and-play without this step.
+
+### 3. Configure your HTTPS API
+
+Host `web/wolf_api.php` behind your own HTTPS domain. Copy `web/wolf_config.php.example` to a private `wolf_config.php` in the same directory and set the actual DSN, database credentials, **existing voice credential key file path**, and runtime limits. Restrict this configuration file from HTTP access and limit local read permissions to the PHP service account. Do not commit the key or passwords.
+
+The PHP host needs to read the **same credential secret** as your trusted voice/simulator installation. Only permit your approved simulator hosts to connect, with an appropriate firewall and trusted-server registry. The API checks `REMOTE_ADDR`, not arbitrary forwarded headers.
+
+### 4. Configure every OpenSimulator region
+
+Use the complete **[OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)** DLL/PDB package. The correct AdHoc regional DLL is already included: do not replace it with the old standalone download.
+
+In each simulator's `bin/config/wolfvoice.ini`, keep your existing voice settings and add:
+
+```ini
+[WebRtcVoice]
+ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
+```
+
+**Replace the fictional `conference.example.org` hostname and path with your own real HTTPS PHP API location.** BloodMoon's hosted conference service is private, not an open public endpoint. Restart every participating simulator.
+
+### 5. Validate and troubleshoot
+
+- An HTTP **GET** request to `wolf_api.php` normally returns **405 (POST required)**: this only confirms the HTTP route is present, **not** that conferences work.
+- **403:** verify allowed simulator IP, the shared credential key and request signature.
+- **503:** investigate MySQL connectivity or the credential key path.
+- Test in Firestorm: create a multi-avatar IM, check text delivery and optional voice, hang up/rejoin, then repeat between avatars on **two separate simulator processes**.
+- If the second simulator receives no invite, check its matching `.3` DLLs, `ConferenceApiUrl`, trust registry and OpenSimulator IM routing.
+
+**Security:** a holder of the shared credential secret may be able to sign actions on behalf of other agent UUIDs. Use only trusted simulator operators; the current design is not secure open federation with independent avatar authentication.
 
 ## C. Troubleshooting
 
