@@ -21,7 +21,7 @@
 
    ```ini
    [WebRtcVoice]
-   ConferenceApiUrl = https://bloodmoonpack.com/adhocconf/wolf_api.php
+   ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
    ```
 
 5. Conserver les fichiers de clé et la configuration `CredKeyFile` existants. Le correctif réutilise la clé de WolfVoice ; **aucune clé AdHoc supplémentaire** ni nouvelle section `[Wolf]` ne sont nécessaires par défaut.
