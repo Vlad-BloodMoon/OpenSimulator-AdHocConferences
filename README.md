@@ -21,31 +21,23 @@
 
 **Tested successfully with Firestorm:** multi-avatar IM creation, text exchange without sender echo, voice invitations, individual hang-up/rejoin without forcing others out of voice, and **cross-simulator invitations/text/voice**. The cross-simulator test required `ConferenceApiUrl` on **both** simulators. This is an initial public release of the **BloodMoon-tested integration**, not a claim of compatibility with every OpenSimulator distribution/viewer or an independent security audit.
 
-## Downloads
+## Installation recommandée — pas à pas
 
-Get the **versioned DLL ZIP** from [GitHub Releases](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases). The DLL comes from the .NET 8 build of **[`Vlad-BloodMoon/opensim` tag `v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2)** plus the patches in this repository.
+Pour une installation neuve, suivre le [guide complet BloodMoon Voice](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md), puis le [guide d'installation de l'API](docs/INSTALLATION.fr.md).
 
-**Important:** `WebRtcVoiceRegionModule.dll` is a **replacement for the existing DLL**, **not** a standalone module. You must already have the other matching WebRTC/WolfVoice modules and the required key file(s) from the **same baseline release**. Do **not** mix it with `master`, older builds, Janus-only modules, or arbitrary OpenSimulator versions.
-
-## Quick start — each simulator
-
-1. Back up your current `bin/WebRtcVoiceRegionModule.dll` and stop that simulator.
-2. Replace **only** `bin/WebRtcVoiceRegionModule.dll` with the DLL from the release ZIP; retain the other WolfVoice/WebRTC files.
-3. In that simulator's `wolfvoice.ini` (or corresponding OpenSim configuration), add to **`[WebRtcVoice]`**:
+1. Installer [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) sur son propre serveur vocal.
+2. Sur **chaque simulateur**, installer les trois paires DLL/PDB de la [release OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3). La DLL AdHoc testée est **déjà dedans** : ne pas installer le vieux ZIP autonome de ce dépôt par-dessus.
+3. Sur son serveur web, installer l'API PHP/MySQL depuis `web/wolf_api.php`, `web/wolf_config.php.example` et `database/wolf_schema.sql`. Vérifier la dépendance à `wolfvoice_admin.servers` dans le [guide détaillé](docs/INSTALLATION.fr.md).
+4. Dans `[WebRtcVoice]` de **chaque simulateur**, renseigner **sa propre** adresse :
 
    ```ini
-   [WebRtcVoice]
-   ; Preserve all existing Enabled, voice service, and key settings.
    ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
    ```
 
-4. Preserve the **existing** `CredKeyFile` setting / credential-key file; **no new `[Wolf] SimSecretPath` is needed** in the supported key-fallback configuration.
-5. Restart the simulator; test a multi-avatar IM, then an optional conference call.
-6. **Repeat steps 1–5 on every participating simulator**, including simulators belonging to other trusted/allowed operators. **Installing the DLL without `ConferenceApiUrl` is insufficient.**
+   **Attention :** `conference.example.org` est un exemple fictif, qui ne fonctionnera pas sans être remplacé par votre domaine HTTPS hébergeant `wolf_api.php`. L'API BloodMoon en production n'est pas ouverte au public.
+5. Vérifier l'autorisation des IP et la clé privée commune, redémarrer, puis tester conférence texte et voix entre deux simulateurs.
 
-That URL is the **BloodMoon-hosted test/service endpoint**, not a generic hosted service. Access is restricted to permitted hosts, and the service relies on the **shared existing credential secret**. Do not share the secret publicly or assume an unapproved simulator can use that endpoint. Self-hosters can deploy their own endpoint with the server files in this repository.
-
-Full steps: [English installation guide](docs/INSTALLATION.md) · [Guide français](docs/INSTALLATION.fr.md).
+**À propos de [l'ancienne release AdHoc v0.1.0](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases/tag/v0.1.0) :** son ZIP de DLL régionale est conservé pour l'historique et les développeurs qui reconstruisent à partir de la base `.2`. **Ce n'est PAS le paquet à installer pour une installation complète basée sur `.3`.**
 
 ## Architecture
 
