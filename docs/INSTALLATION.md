@@ -12,30 +12,28 @@ The older module-replacement procedure in section A below is **for historical .2
 
 ## Requirements
 
-- A functioning OpenSimulator 0.9.3.1 simulator using the full WolfVoice/WebRTC integration from [`v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2).
+- A functioning OpenSimulator 0.9.3.1 / .NET 8 simulator with the **complete [v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)** module package.
 - The existing voice modules and the existing **credential-key file** used by `[WebRtcVoice] CredKeyFile`.
 - A reachable central conference API over HTTPS, a functioning OpenSimulator grid IM transfer service and suitable network routing.
 - A **trusted, approved** simulator connected to the same voice/conference infrastructure. Never publish or transmit credential secrets in an issue, screenshot, or GitHub commit.
 
-## A. Simulator installation — repeat on *every* simulator
+## A. Recommended simulator installation — complete .3 stack
 
-1. **Stop** the selected simulator. Back up `bin/WebRtcVoiceRegionModule.dll` so it can be restored.
-2. Download the versioned ZIP from [Releases](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases).
-3. Extract and copy **only `WebRtcVoiceRegionModule.dll`** into this simulator's `bin/` directory. **Do not replace** its other WebRTC, economy, search or OpenSimulator DLLs.
-4. Open the simulator's `wolfvoice.ini` (or the INI that contains its `[WebRtcVoice]` section) and retain existing configuration. Add:
+1. Install the [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) backend on your own voice host using the [full English guide](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/INSTALLATION.md).
+2. Stop each simulator and back up its existing voice DLLs, `wolfvoice.ini` and keys.
+3. Install **all three matching DLL/PDB pairs** from [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3). **The AdHoc-enabled region DLL is already included**; do not overwrite it with the older `v0.1.0` standalone DLL.
+4. Deploy your separate central PHP/MySQL API as described in section B.
+5. Preserve existing `CredKeyFile` and other voice settings and add your own API URL to `[WebRtcVoice]` on **every participating simulator**:
 
-   ```ini
-   [WebRtcVoice]
-   ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
-   ```
+```ini
+ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
+```
 
-   The domain `conference.example.org` is a **non-working example placeholder**, NOT BloodMoon's hosted endpoint. Replace it with the HTTPS address of your **own** deployed `wolf_api.php`. BloodMoon's production API is private and not open to other installations.
-5. Keep the existing `[WebRtcVoice] CredKeyFile` setting and key file. The module reuses it; **no new `[Wolf] SimSecretPath` is required** by the default configuration. Do not remove or rotate an existing key without coordinating your voice server.
-6. Start the simulator. Confirm WebRTC initializes and there is **no** log stating `no ConferenceApiUrl`.
-7. Create a **new multi-avatar IM conversation** in Firestorm; verify that each participant receives the invitation and text. Then initiate a **voice** call, hang up from one participant only, and rejoin.
-8. **Repeat the same install and INI change on the second simulator**, then test one avatar per simulator. Each destination must run the patched module; merely installing it on the source is insufficient.
+**Important:** `conference.example.org` is a **fictional example domain**, not the BloodMoon service. Replace it with your own installed API's real HTTPS domain and path. BloodMoon's production endpoint is private and not open to unapproved simulators.
 
-**Known working behavior (BloodMoon test, 7 Nov 2026):** text IMs delivered once, conference voice optional, individual voice hang-up/rejoin, active listeners not forced out, and cross-simulator invitation/text/voice.
+6. Restart each simulator. Test text invitations and messages, optional conference voice, hang-up and rejoin, then repeat between two separate simulator processes.
+
+The historical `v0.1.0` regional-DLL-only package is for developers working with the original `.2` baseline, **not an extra module to install on top of `.3`**.
 
 ## B. Central registry installation — for a *self-hosted, trusted* deployment
 
