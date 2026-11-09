@@ -2,7 +2,7 @@
 
 > **Installation complète recommandée :** utiliser [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0), les **trois paires DLL/PDB de [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)** et, séparément, l'API PHP/MySQL de ce dépôt. **La DLL régionale de la release .3 intègre déjà les correctifs AdHoc : ne pas la remplacer par l'ancienne DLL indépendante.** Voir le [guide complet des trois projets](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md). Les indications sur la base .2 ci-dessous décrivent la compilation historique du correctif.
 
-**Version validée :** OpenSimulator **0.9.3.1**, **.NET 8**, module WebRTC/WolfVoice fondé sur la release [`v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2). Tests concluants le **7 novembre 2026** sur BloodMoon avec des avatars présents sur **deux simulateurs différents**.
+**Version complète recommandée :** OpenSimulator **0.9.3.1**, **.NET 8**, modules [`v0.9.3.1-webrtc.3`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3). La release `.2` n'est que la base historique de compilation. Tests concluants le **7 novembre 2026** sur BloodMoon avec des avatars présents sur **deux simulateurs différents**.
 
 ## Installation recommandée pour un nouvel utilisateur
 
@@ -20,29 +20,25 @@ Les anciennes indications de remplacement d'une DLL unique ci-dessous concernent
 - Chacun peut raccrocher et revenir dans la voix sans quitter le chat écrit, sans déconnecter les autres.
 - Les appels vocaux privés, la voix de proximité et la voix des groupes habituels restent disponibles avec la base WolfVoice compatible.
 
-## Installer la DLL sur un simulateur
+## Procédure recommandée : installation complète
 
-1. **Arrêter le simulateur** et sauvegarder sa DLL actuelle `bin/WebRtcVoiceRegionModule.dll`.
-2. Télécharger l'archive de la dernière [release GitHub](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases).
-3. Extraire et copier **uniquement `WebRtcVoiceRegionModule.dll`** dans le répertoire `bin/` de ce simulateur. **Ne pas remplacer les autres DLL.**
-4. Dans le fichier `wolfvoice.ini` de **ce simulateur**, conserver les réglages déjà présents et ajouter dans la section `[WebRtcVoice]` :
+1. Installer [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) sur son propre serveur en suivant le [guide français complet](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/INSTALLATION_FR.md).
+2. Arrêter chaque simulateur et sauvegarder sa configuration, ses clés et ses anciennes DLL. Installer les **trois paires DLL/PDB** de [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3).
+3. **Ne pas ajouter l'ancienne DLL régionale de la release AdHoc v0.1.0** : la bonne version est déjà dans le ZIP OpenSimulator `.3`.
+4. Installer l'API centrale PHP/MySQL de ce dépôt (section suivante) sur son propre serveur web HTTPS.
+5. Dans `[WebRtcVoice]` de **chaque simulateur**, conserver les clés existantes et ajouter une URL pointant vers **sa propre API** :
 
-   ```ini
-   [WebRtcVoice]
-   ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
-   ```
+```ini
+ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
+```
 
-5. Conserver les fichiers de clé et la configuration `CredKeyFile` existants. Le correctif réutilise la clé de WolfVoice ; **aucune clé AdHoc supplémentaire** ni nouvelle section `[Wolf]` ne sont nécessaires par défaut.
-6. Redémarrer le simulateur. Tester une conférence écrite avec plusieurs avatars puis un appel audio.
-7. **Effectuer exactement la même opération sur le deuxième simulateur**, y compris la ligne `ConferenceApiUrl`. Les deux simulateurs doivent être autorisés à contacter le service central.
+**Adresse fictive :** `conference.example.org` est un simple exemple et doit être remplacé par le domaine réel hébergeant `wolf_api.php`. Ce n'est **pas** l'API de BloodMoon. Le service privé de BloodMoon n'est pas ouvert aux serveurs externes non autorisés.
 
-**Point confirmé pendant les tests :** si la DLL est installée sur deux simulateurs mais que `ConferenceApiUrl` manque sur l'un, son résident ne reçoit ni l'invitation ni les messages de la conférence. Ajouter la ligne et redémarrer a permis de valider le fonctionnement inter-simulateurs.
+6. Redémarrer les simulateurs. Tester les invitations IM, les messages et l'audio facultatif, d'abord sur un seul simulateur puis entre deux simulateurs différents.
 
-## Ce qu'il faut savoir avant d'utiliser l'URL BloodMoon
+## Installation historique d'une DLL régionale seule
 
-L'URL de l'exemple est **un service réellement hébergé par BloodMoon**, et non une API publique ouverte sans restrictions. Pour y accéder, ton simulateur doit faire partie des **serveurs de confiance autorisés**, disposer de la version compatible du module, et utiliser la clé de credential WolfVoice prévue pour ce service.
-
-**Ne publie jamais les fichiers de clé ni leur contenu.** Le service repose actuellement sur une clé partagée et une liste d'adresses IP autorisées : cette combinaison **ne garantit pas l'identité d'un avatar** face à un administrateur de simulateur non fiable. Elle ne doit pas être ouverte à n'importe quelle grille sans renforcer l'authentification.
+Le ZIP DLL du dépôt AdHoc est conservé pour les développeurs qui reconstruisent l'ancien système depuis la base `.2`. **Ne pas l'utiliser pour une nouvelle installation complète basée sur `.3`.**
 
 ## Déployer son propre serveur de conférences
 
@@ -68,7 +64,7 @@ Installation complète du serveur PHP/MySQL, exemples de droits et de sécurité
 
 ## Versions et compatibilité
 
-Le module public provient de **`v0.9.3.1-webrtc.2`**, avec les **sept correctifs** du présent dépôt. Il ne s'agit ni d'un module autonome à installer à côté d'une autre version, ni d'une DLL générique pour toute version OpenSimulator.
+Le module régional historique de ce dépôt provient de la base **`v0.9.3.1-webrtc.2`**, avec les correctifs du présent dépôt. Pour une nouvelle installation, préférer le pack complet **`v0.9.3.1-webrtc.3`**. Il ne s'agit ni d'un module autonome à installer à côté d'une autre version, ni d'une DLL générique pour toute version OpenSimulator.
 
 [Releases GitHub](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/releases) · [README anglais](../README.md) · [Compilation #30 validée](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/runs/42395627678).
 
