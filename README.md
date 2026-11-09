@@ -29,7 +29,7 @@ Pour une installation neuve, suivre le [guide complet BloodMoon Voice](https://g
 
 1. Installer [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) sur son propre serveur vocal.
 2. Sur **chaque simulateur**, installer les trois paires DLL/PDB de la [release OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3). La DLL AdHoc testée est **déjà dedans** : ne pas installer le vieux ZIP autonome de ce dépôt par-dessus.
-3. Sur son serveur web, installer l'API PHP/MySQL depuis `web/wolf_api.php`, `web/wolf_config.php.example` et `database/wolf_schema.sql`. Vérifier la dépendance à `wolfvoice_admin.servers` dans le [guide détaillé](docs/INSTALLATION.fr.md).
+3. Sur son serveur web, installer l'API PHP/MySQL depuis `web/wolf_api.php`, `web/wolf_config.php.example` et `database/wolf_schema.sql`. Pour un serveur indépendant, utiliser `authorization_source = local` et `trusted_simulator_ips` dans la configuration PHP (voir le [guide détaillé](docs/INSTALLATION.fr.md)).
 4. Dans `[WebRtcVoice]` de **chaque simulateur**, renseigner **sa propre** adresse :
 
    ```ini
@@ -83,9 +83,9 @@ See [Architecture, deployment and security](docs/ARCHITECTURE.md).
 
 **Important: trusted-simulator model only.** The existing WolfVoice credential key is reused for conference HMAC requests and internal-grid IM envelopes. Any operator holding this shared secret can potentially impersonate conference actors; the allowlist checks source IP but **does not cryptographically prove the avatar identity**. It is **not safe to distribute that key to arbitrary/untrusted operators**.
 
-The API requires HTTPS, signed request metadata, a valid allowed simulator IP (via `wolfvoice_admin.servers` or the local diagnostics list), and an isolated PHP runtime. Never commit credentials. Protect the central server, back up its database, and review the trust model before broad federation.
+The API requires HTTPS, signed request metadata, an allowed simulator IP (standalone `authorization_source = local`, or legacy BloodMoon `bloodmoon_db`), and an isolated PHP runtime. Never commit credentials. Protect the central server, back up its database, and review the trust model before broad federation.
 
-The supplied PHP backend is tailored to BloodMoon's WolfVoice allowlist database and **requires adaptation for an independent deployment**. Viewers, networking, security settings and other grid modules can affect compatibility. Full external deployment and third-party security auditing remain outside this release's validation.
+New independent deployments can use `authorization_source = local` with explicitly configured `trusted_simulator_ips`, without the BloodMoon admin database. Viewers, networking, security settings and other grid modules can affect compatibility. Full external deployment and third-party security auditing remain outside this release's validation.
 
 ## Build from source
 
