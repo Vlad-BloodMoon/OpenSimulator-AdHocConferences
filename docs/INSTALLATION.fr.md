@@ -40,16 +40,67 @@ ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
 
 Le ZIP DLL du dépôt AdHoc est conservé pour les développeurs qui reconstruisent l'ancien système depuis la base `.2`. **Ne pas l'utiliser pour une nouvelle installation complète basée sur `.3`.**
 
-## Déployer son propre serveur de conférences
+## Installation de l'API PHP/MySQL sur son propre serveur — pas à pas
 
-Le dépôt contient :
-- `database/wolf_schema.sql` : tables MySQL `wolf_conf_sessions` et `wolf_conf_members` ;
-- `web/wolf_api.php` : API de gestion et d'authentification des conférences ;
-- `web/wolf_config.php.example` : modèle de configuration privée.
+Cette procédure s'adresse à un administrateur disposant **déjà** d'un serveur Ubuntu avec HTTPS, PHP 8.3 ou supérieur, PDO MySQL et MySQL 8. Ne pas exécuter ces commandes sur la production BloodMoon. Sauvegarder les configurations existantes avant toute modification. Ne jamais enregistrer de clés dans GitHub.
 
-Ce backend est **adapté au fonctionnement de BloodMoon** : il consulte la table `wolfvoice_admin.servers` pour n'accepter que les adresses IP ayant le statut `allowed`. Sur un autre serveur, il faut disposer de cette structure ou adapter ce contrôle. Les scripts `web/conferences.php`, `web/config.php.example` et `database/schema.sql` sont d'anciens prototypes **à ne pas utiliser**.
+### 1. Préparer les fichiers
 
-Installation complète du serveur PHP/MySQL, exemples de droits et de sécurité : [documentation anglaise](INSTALLATION.md) et [architecture](ARCHITECTURE.md).
+Cloner **ce dépôt** sur le serveur qui héberge l'API :
+
+```bash
+git clone https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences.git
+cd OpenSimulator-AdHocConferences
+```
+
+Les fichiers à utiliser sont `database/wolf_schema.sql`, `web/wolf_api.php` et `web/wolf_config.php.example`. Ils **ne contiennent pas** le binaire vocal ni les modules du simulateur. Ne pas installer les anciens prototypes.
+
+### 2. Préparer la base MySQL
+
+Dans une session MySQL d'administration, créer une base et un utilisateur dédiés (remplacer le mot de passe d'exemple) :
+
+```sql
+CREATE DATABASE opensim_adhoc CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'adhoc_user'@'localhost' IDENTIFIED BY 'REMPLACER_PAR_UN_SECRET_FORT';
+GRANT SELECT, INSERT, UPDATE, DELETE ON opensim_adhoc.* TO 'adhoc_user'@'localhost';
+```
+
+Importer **le schéma fourni par ce dépôt** :
+
+```bash
+mysql -u root -p opensim_adhoc < database/wolf_schema.sql
+```
+
+**Dépendance à prévoir :** le PHP de cette version interroge `wolfvoice_admin.servers` pour y rechercher une adresse IP dont `status='allowed'`, en comparant `resolved_ip` et `server_address`. Cette table **n'est pas créée par `wolf_schema.sql`**. Si ton serveur vocal n'a pas déjà ce registre, il faut **créer un registre compatible et accorder uniquement SELECT à l'utilisateur PHP, ou adapter la requête du PHP à ton système de liste blanche**. Il n'existe pas d'installation autonome entièrement automatique de cette partie.
+
+### 3. Configurer PHP et l'hébergement HTTPS
+
+Installer `web/wolf_api.php` derrière le domaine HTTPS choisi (par exemple `https://conference.example.org/adhocconf/wolf_api.php`). Copier `web/wolf_config.php.example` sous le nom `wolf_config.php` dans le même dossier, puis définir le DSN, le mot de passe SQL, le chemin réel du fichier de clé existante `CredKeyFile` et les autres paramètres.
+
+Le fichier `wolf_config.php` doit être **illisible depuis le web** et lisible uniquement par le service PHP approprié. Ne pas laisser des mots de passe ou clés dans un dépôt public. Le processus PHP doit pouvoir lire la **même clé de credential** que les simulateurs et le serveur vocal, sans jamais la publier.
+
+Configurer le serveur HTTPS et le pare-feu en n'autorisant que les simulateurs **de confiance**. Le contrôle logiciel consulte l'IP source de la requête et le registre d'autorisation ; il ne suffit pas d'avoir une URL connue pour être accepté.
+
+### 4. Configurer tous les simulateurs
+
+Sur **chaque** OpenSimulator 0.9.3.1 / .NET 8 participant, utiliser exclusivement les DLL/PDB de la release `v0.9.3.1-webrtc.3`. Dans `bin/config/wolfvoice.ini`, conserver les réglages vocaux existants et définir :
+
+```ini
+[WebRtcVoice]
+ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
+```
+
+**Remplacer `conference.example.org` par le vrai nom DNS de ton serveur web et adapter le chemin.** Cet exemple ne désigne aucun service en fonctionnement. Le service BloodMoon n'est pas ouvert au public. Redémarrer **tous** les simulateurs.
+
+### 5. Vérifications et erreurs courantes
+
+- Une requête HTTP GET vers `wolf_api.php` renvoie normalement **405 (POST requis)** : cela indique seulement que la route répond, pas que la conférence est opérationnelle.
+- Une erreur **403** peut indiquer une IP non autorisée ou une signature/clés incompatibles.
+- Une erreur **503** peut indiquer une base inaccessible ou la clé indisponible.
+- Vérifier ensuite dans Firestorm une conférence écrite entre plusieurs avatars, puis l'audio facultatif. Refaire avec deux avatars sur **deux simulateurs différents**.
+- Si les invitations n'arrivent pas sur la deuxième région : contrôler la DLL `.3`, `ConferenceApiUrl`, la liste blanche et le transfert des IM OpenSimulator sur **les deux régions**.
+
+**Sécurité :** le secret partagé permet à un administrateur de simulateur de signer des actions pour des UUID d'avatars. Ce modèle ne convient qu'à des administrateurs de confiance et ne prouve pas indépendamment l'identité de l'avatar. Ne pas ouvrir cette API à des tiers non fiables sans repenser l'authentification.
 
 ## En cas de problème
 
