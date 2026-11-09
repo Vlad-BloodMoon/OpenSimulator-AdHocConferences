@@ -20,7 +20,7 @@ This guide covers the **tested BloodMoon build** for **OpenSimulator 0.9.3.1 / .
 
    ```ini
    [WebRtcVoice]
-   ConferenceApiUrl = https://bloodmoonpack.com/adhocconf/wolf_api.php
+   ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
    ```
 
    The endpoint above belongs to BloodMoon. If you run your own server, use the HTTPS URL of your own deployed `wolf_api.php` instead.
@@ -33,7 +33,7 @@ This guide covers the **tested BloodMoon build** for **OpenSimulator 0.9.3.1 / .
 
 ## B. Central registry installation — for a *self-hosted, trusted* deployment
 
-**BloodMoon administrators:** the current deployment already runs at `https://bloodmoonpack.com/adhocconf/wolf_api.php`; these steps describe the components for another **trusted** installation, not a command to overwrite the live environment.
+**BloodMoon administrators:** the current deployment already uses a private BloodMoon conference endpoint; these steps describe the components for another **trusted** installation, not a command to overwrite the live environment.
 
 1. Prepare a dedicated MySQL 8 database with UTF-8 support. Import **`database/wolf_schema.sql`** (not the obsolete prototype schema). This creates `wolf_conf_sessions` and `wolf_conf_members`.
 2. Create a low-privilege database user with `SELECT, INSERT, UPDATE, DELETE` on the conference database. **The current `wolf_api.php` also queries `wolfvoice_admin.servers` for `status='allowed'` and the configured source IP**; grant narrowly scoped `SELECT` on that table and provide a compatible allowlist, or adapt the code to your own trusted-host registry. The PHP does **not** work unchanged without that dependency.
