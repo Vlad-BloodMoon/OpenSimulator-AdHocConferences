@@ -1,5 +1,7 @@
 # Installation guide — OpenSimulator Ad-Hoc Conferences
 
+> **Current complete installation:** for a new BloodMoon Voice deployment use the [BloodMoon Voice server](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0), the **three matching DLL/PDB pairs from [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)**, and this repository's PHP/MySQL conference API. **The .3 regional DLL already contains the AdHoc fixes. Do not replace it with the older standalone AdHoc DLL.** Read the [complete installation guide](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md). The .2 steps below are preserved for historical standalone patch builds.
+
 This guide covers the **tested BloodMoon build** for **OpenSimulator 0.9.3.1 / .NET 8**, **Firestorm**, and the **WolfVoice** backend. The compiled DLL is not a generic binary for unrelated OpenSimulator forks.
 
 ## Requirements
