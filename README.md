@@ -1,5 +1,7 @@
 # OpenSimulator Ad-Hoc Conferences · WolfVoice WebRTC
 
+> **Recommended complete BloodMoon deployment (November 2026):** use [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) with the **exact complete [OpenSimulator v0.9.3.1-webrtc.3 module ZIP](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)**, whose regional DLL **already incorporates** the tested AdHoc changes. **Do not replace that .3 regional DLL with the older standalone DLL from this project's historical release.** For your own conference service, separately deploy this repository's current PHP/MySQL API. [Full three-project installation](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md). The older .2 references below describe the original patch/build baseline, not the recommended complete .3 deployment.
+
 **Multi-avatar instant-message conferences with optional WebRTC voice calls for OpenSimulator 0.9.3.1 / .NET 8.** Supports residents on **different simulator processes/regions**, using the existing WolfVoice voice integration.
 
 [![Build and integration checks](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/workflows/check.yml/badge.svg)](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/actions/workflows/check.yml)
