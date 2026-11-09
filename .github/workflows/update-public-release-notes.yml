@@ -19,6 +19,14 @@ jobs:
         run: |
           set -euo pipefail
           {
+            echo '## Installation / Guide d’installation'
+            echo
+            echo '**Français :** [présentation du projet](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/blob/main/README.fr.md) · [guide complet de l’API PHP/MySQL](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/blob/main/docs/INSTALLATION.fr.md) · [installation complète BloodMoon Voice](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/INSTALLATION_FR.md)'
+            echo
+            echo '**English:** [project overview](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences) · [PHP/MySQL installation](https://github.com/Vlad-BloodMoon/OpenSimulator-AdHocConferences/blob/main/docs/INSTALLATION.md) · [complete BloodMoon Voice installation](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/INSTALLATION.md)'
+            echo
+            echo '**IMPORTANT:** The correct regional DLL is already in OpenSimulator v0.9.3.1-webrtc.3. / La bonne DLL régionale se trouve déjà dans OpenSimulator v0.9.3.1-webrtc.3.'
+            echo
             echo "**Recommended complete installation:** use [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) and the complete, already AdHoc-integrated [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3) DLL/PDB package. The standalone DLL in this historical release is **not** an additional DLL to install on top of .3. Deploy the PHP/MySQL backend from this repository separately. [Full three-project guide](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md)."
             echo
             cat RELEASE_NOTES.md
