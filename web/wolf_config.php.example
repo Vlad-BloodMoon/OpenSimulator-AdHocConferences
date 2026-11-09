@@ -10,15 +10,13 @@ return [
     // Path readable only by the trusted PHP service to the SAME voice credential secret.
     'existing_cred_key_file' => '/etc/wolfvoice/cred_key',
 
-    // RECOMMENDED FOR NEW SELF-HOSTED INSTALLATIONS:
-    // No BloodMoon administrative database is needed in this mode.
+    // BLOODMOON PRODUCTION BRANCH: use existing trusted server registry.
+    // Keep current production credentials OUT of GitHub.
     // Enter the actual PUBLIC egress IPv4/IPv6 addresses of YOUR trusted
     // OpenSimulator hosts, as seen by PHP in REMOTE_ADDR.
     // Empty list denies all access (fail-closed). Do not use 0.0.0.0/0.
-    'authorization_source' => 'local',
-    'trusted_simulator_ips' => [
-        '192.0.2.10', // EXAMPLE ONLY: replace with real simulator public IP
-    ],
+    'authorization_source' => 'bloodmoon_db',
+    'trusted_simulator_ips' => [], // not used by BloodMoon database mode
 
     // Legacy BloodMoon installation: set authorization_source to bloodmoon_db
     // and provide wolfvoice_admin.servers, with status='allowed'.
