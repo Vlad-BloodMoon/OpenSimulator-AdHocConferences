@@ -71,15 +71,18 @@ Importer **le schéma fourni par ce dépôt** :
 mysql -u root -p opensim_adhoc < database/wolf_schema.sql
 ```
 
-**Mode BloodMoon historique (optionnel) :** si `wolf_config.php` contient `'authorization_source' => 'bloodmoon_db'`, l'utilisateur MySQL de l'API doit aussi pouvoir lire la table de liste blanche des simulateurs :
+**Installation autonome recommandée (pour toute grille OpenSimulator) :** dans `wolf_config.php`, utiliser `'authorization_source' => 'local'` et remplacer `'trusted_simulator_ips'` par les **adresses IP sortantes réelles** des simulateurs autorisés. Une liste vide refuse toute demande. Le compte `adhoc_user` n'a besoin que des droits indiqués ci-dessus sur `opensim_adhoc` : **aucun accès à la base ROBUST d'OpenSimulator ni à une autre base n'est nécessaire**.
 
-```sql
-GRANT SELECT ON wolfvoice_admin.servers TO 'adhoc_user'@'localhost';
+Exemple de réglage dans `wolf_config.php` (adapter les adresses et conserver les autres paramètres du modèle) :
+
+```php
+'authorization_source' => 'local',
+'trusted_simulator_ips' => [
+    '192.0.2.10', // Exemple de documentation : remplacer par l'IP publique réelle
+],
 ```
 
-Ce droit est **uniquement en lecture** et ne concerne **pas** la base `robust`. Il n'est pas nécessaire avec le mode autonome `'local'`. Le nom de compte et l'hôte (`'localhost'`) doivent correspondre à ceux configurés dans `wolf_config.php`.
-
-**Installation autonome :** dans `wolf_config.php`, définir `'authorization_source' => 'local'` et renseigner `'trusted_simulator_ips' => ['IP_PUBLIQUE_DU_SIMULATEUR']` (remplacer par la véritable IP sortante de chaque simulateur). **Aucune table `wolfvoice_admin.servers` n'est nécessaire dans ce mode.** Le mode historique `'bloodmoon_db'` continue d'utiliser cette table pour les installations BloodMoon existantes. Sans liste d'IP autorisées, l'API refuse toutes les requêtes.
+> **Cas particulier — installation BloodMoon existante uniquement :** le mode `'bloodmoon_db'` lit `wolfvoice_admin.servers` et nécessite `SELECT` sur cette table. Ce n'est **pas** le mode à utiliser pour une nouvelle installation et il ne nécessite pas d'accès à la base `robust`.
 
 ### 3. Configurer PHP et l'hébergement HTTPS
 
