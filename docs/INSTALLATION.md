@@ -4,6 +4,12 @@
 
 This guide covers the **tested BloodMoon build** for **OpenSimulator 0.9.3.1 / .NET 8**, **Firestorm**, and the **WolfVoice** backend. The compiled DLL is not a generic binary for unrelated OpenSimulator forks.
 
+## Recommended complete .3 installation (read this first)
+
+For new deployments use [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0), the **full [OpenSimulator v0.9.3.1-webrtc.3 module ZIP](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)** (three matching DLL/PDB pairs) and separately deploy **only the PHP/MySQL conference API** from this repository. The .3 package **already includes** the tested AdHoc regional DLL. **Do not install the older standalone v0.1.0 regional DLL on top of .3.** [Complete step-by-step installation](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md).
+
+The older module-replacement procedure in section A below is **for historical .2-based development only**, not the recommended fresh .3 installation.
+
 ## Requirements
 
 - A functioning OpenSimulator 0.9.3.1 simulator using the full WolfVoice/WebRTC integration from [`v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2).
@@ -23,7 +29,7 @@ This guide covers the **tested BloodMoon build** for **OpenSimulator 0.9.3.1 / .
    ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
    ```
 
-   The endpoint above belongs to BloodMoon. If you run your own server, use the HTTPS URL of your own deployed `wolf_api.php` instead.
+   The domain `conference.example.org` is a **non-working example placeholder**, NOT BloodMoon's hosted endpoint. Replace it with the HTTPS address of your **own** deployed `wolf_api.php`. BloodMoon's production API is private and not open to other installations.
 5. Keep the existing `[WebRtcVoice] CredKeyFile` setting and key file. The module reuses it; **no new `[Wolf] SimSecretPath` is required** by the default configuration. Do not remove or rotate an existing key without coordinating your voice server.
 6. Start the simulator. Confirm WebRTC initializes and there is **no** log stating `no ConferenceApiUrl`.
 7. Create a **new multi-avatar IM conversation** in Firestorm; verify that each participant receives the invitation and text. Then initiate a **voice** call, hang up from one participant only, and rejoin.
@@ -70,11 +76,11 @@ return [
 | Voice authorization denied | Verify membership, voice key, voice permissions, and whether a participant actually left the **text** conference rather than just its audio |
 | Old or mismatched DLL | Restore the backed-up DLL, verify the full `v0.9.3.1-webrtc.2` module baseline, then upgrade again |
 
-For logs on BloodMoon's Displayname simulator:
+For logs, use your own OpenSimulator log path (the following is a generic example):
 
 ```bash
 grep -Ei '\[CONF\]|\[CALL\]|\[CHATSESSION\]|\[CONF-TEXT-DIAG\]' \
-  /home/louna49400/OpenSim/Displayname/bin/OpenSim.log | tail -80
+  /path/to/your/OpenSim/bin/OpenSim.log | tail -80
 ```
 
 For other grids, substitute your own simulator path. Production logs may contain avatar UUIDs and session identifiers; redact them before posting publicly.
