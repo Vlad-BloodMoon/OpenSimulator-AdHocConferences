@@ -1,0 +1,27 @@
+name: Publish safe AdHoc example in release notes
+on:
+  push:
+    paths:
+      - .github/workflows/update-public-release-notes.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  notes:
+    if: github.repository == 'Vlad-BloodMoon/OpenSimulator-AdHocConferences'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish revised notes without changing legacy binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "**Recommended complete installation:** use [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0) and the complete, already AdHoc-integrated [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3) DLL/PDB package. The standalone DLL in this historical release is **not** an additional DLL to install on top of .3. Deploy the PHP/MySQL backend from this repository separately. [Full three-project guide](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md)."
+            echo
+            cat RELEASE_NOTES.md
+          } > /tmp/notes.md
+          ! grep -Fq 'https://bloodmoonpack.com/adhocconf/wolf_api.php' /tmp/notes.md
+          gh release edit v0.1.0 --notes-file /tmp/notes.md --repo "$GITHUB_REPOSITORY"
