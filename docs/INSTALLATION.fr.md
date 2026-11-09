@@ -1,5 +1,7 @@
 # Guide d'installation — Conférences AdHoc WolfVoice pour OpenSimulator
 
+> **Installation complète recommandée :** utiliser [BloodMoon Voice v1.0.0](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/releases/tag/v1.0.0), les **trois paires DLL/PDB de [OpenSimulator v0.9.3.1-webrtc.3](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.3)** et, séparément, l'API PHP/MySQL de ce dépôt. **La DLL régionale de la release .3 intègre déjà les correctifs AdHoc : ne pas la remplacer par l'ancienne DLL indépendante.** Voir le [guide complet des trois projets](https://github.com/Vlad-BloodMoon/BloodMoon-Voice/blob/main/docs/COMPLETE_STACK.md). Les indications sur la base .2 ci-dessous décrivent la compilation historique du correctif.
+
 **Version validée :** OpenSimulator **0.9.3.1**, **.NET 8**, module WebRTC/WolfVoice fondé sur la release [`v0.9.3.1-webrtc.2`](https://github.com/Vlad-BloodMoon/opensim/releases/tag/v0.9.3.1-webrtc.2). Tests concluants le **7 novembre 2026** sur BloodMoon avec des avatars présents sur **deux simulateurs différents**.
 
 ## Fonctionnement
