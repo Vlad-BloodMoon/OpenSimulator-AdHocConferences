@@ -64,15 +64,18 @@ Import the supplied schema:
 mysql -u root -p opensim_adhoc < database/wolf_schema.sql
 ```
 
-**Legacy BloodMoon authorization (optional):** if `wolf_config.php` uses `'authorization_source' => 'bloodmoon_db'`, the API database account also needs read-only permission for the simulator allowlist table:
+**Recommended standalone installation (for any OpenSimulator grid):** in `wolf_config.php`, use `'authorization_source' => 'local'` and set `'trusted_simulator_ips'` to the **actual public egress IP addresses** of your trusted simulators. An empty list denies all requests. The `adhoc_user` account needs only the permissions listed above on `opensim_adhoc`: **no access to the OpenSimulator ROBUST database or any other database is needed**.
 
-```sql
-GRANT SELECT ON wolfvoice_admin.servers TO 'adhoc_user'@'localhost';
+Example in `wolf_config.php` (replace the addresses and keep the other settings from the template):
+
+```php
+'authorization_source' => 'local',
+'trusted_simulator_ips' => [
+    '192.0.2.10', // Documentation-only example: replace with your actual public IP
+],
 ```
 
-This is **read-only access** and does **not** require any permission on the `robust` database. It is not needed for standalone `'local'` authorization. Match the actual database account and host configured in `wolf_config.php`.
-
-**Standalone authorization:** set `'authorization_source' => 'local'` in `wolf_config.php` and populate `'trusted_simulator_ips'` with the real public egress IP of every trusted simulator. **No `wolfvoice_admin.servers` database is required in this mode.** The legacy `'bloodmoon_db'` mode still uses that table for existing BloodMoon deployments. An empty local list denies all simulator requests.
+> **Special case — existing BloodMoon installations only:** `'bloodmoon_db'` mode reads `wolfvoice_admin.servers` and requires `SELECT` on that table. This is **not** the mode for a fresh installation and does not require access to the `robust` database.
 
 ### 3. Configure your HTTPS API
 
