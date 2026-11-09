@@ -36,7 +36,7 @@ Get the **versioned DLL ZIP** from [GitHub Releases](https://github.com/Vlad-Blo
    ```ini
    [WebRtcVoice]
    ; Preserve all existing Enabled, voice service, and key settings.
-   ConferenceApiUrl = https://bloodmoonpack.com/adhocconf/wolf_api.php
+   ConferenceApiUrl = https://conference.example.org/adhocconf/wolf_api.php
    ```
 
 4. Preserve the **existing** `CredKeyFile` setting / credential-key file; **no new `[Wolf] SimSecretPath` is needed** in the supported key-fallback configuration.
