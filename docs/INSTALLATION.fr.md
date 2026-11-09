@@ -71,6 +71,14 @@ Importer **le schéma fourni par ce dépôt** :
 mysql -u root -p opensim_adhoc < database/wolf_schema.sql
 ```
 
+**Mode BloodMoon historique (optionnel) :** si `wolf_config.php` contient `'authorization_source' => 'bloodmoon_db'`, l'utilisateur MySQL de l'API doit aussi pouvoir lire la table de liste blanche des simulateurs :
+
+```sql
+GRANT SELECT ON wolfvoice_admin.servers TO 'adhoc_user'@'localhost';
+```
+
+Ce droit est **uniquement en lecture** et ne concerne **pas** la base `robust`. Il n'est pas nécessaire avec le mode autonome `'local'`. Le nom de compte et l'hôte (`'localhost'`) doivent correspondre à ceux configurés dans `wolf_config.php`.
+
 **Installation autonome :** dans `wolf_config.php`, définir `'authorization_source' => 'local'` et renseigner `'trusted_simulator_ips' => ['IP_PUBLIQUE_DU_SIMULATEUR']` (remplacer par la véritable IP sortante de chaque simulateur). **Aucune table `wolfvoice_admin.servers` n'est nécessaire dans ce mode.** Le mode historique `'bloodmoon_db'` continue d'utiliser cette table pour les installations BloodMoon existantes. Sans liste d'IP autorisées, l'API refuse toutes les requêtes.
 
 ### 3. Configurer PHP et l'hébergement HTTPS
